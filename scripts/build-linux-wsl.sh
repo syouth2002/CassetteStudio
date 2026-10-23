@@ -5,7 +5,8 @@ project=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 build_dir=${CASSETTE_LINUX_BUILD:-/var/tmp/cassette-studio-linux-build}
 mkdir -p "$build_dir"
 cp "$project/Cargo.toml" "$project/Cargo.lock" "$build_dir/"
-cp -r "$project/src" "$project/web" "$build_dir/"
+cp -r "$project/src" "$project/web" "$project/assets" "$build_dir/"
+cp "$project/build.rs" "$build_dir/"
 export RUSTUP_HOME=/var/tmp/cassette-rustup
 export CARGO_HOME=/var/tmp/cassette-cargo
 export PATH="/var/tmp/cassette-cargo/bin:/usr/local/bin:/usr/bin:/bin"

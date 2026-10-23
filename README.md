@@ -1,5 +1,7 @@
 # Cassette Studio
 
+<img src="assets/cassette-studio-app.png" width="96" alt="Cassette Studio icon">
+
 **English** · [日本語](README.ja.md)
 
 A Rust application for arranging cassette mixtapes, preparing deck playback, and exporting audio. Windows and Linux run in a standalone desktop window with an embedded WebView. A local browser interface is also available. The interface supports Japanese and English.

@@ -210,6 +210,15 @@ pub async fn start_server() -> Result<Server, Box<dyn std::error::Error>> {
     };
     let routes = Router::new()
         .route(
+            "/favicon.png",
+            get(|| async {
+                (
+                    [("content-type", "image/png")],
+                    include_bytes!("../assets/cassette-studio-favicon.png").as_slice(),
+                )
+            }),
+        )
+        .route(
             "/",
             get(|| async { Html(include_str!("../web/index.html")) }),
         )

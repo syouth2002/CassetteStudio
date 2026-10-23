@@ -4,7 +4,7 @@ use tao::{
     dpi::LogicalSize,
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
+    window::{Icon, WindowBuilder},
 };
 use wry::{WebContext, WebViewBuilder};
 #[cfg(target_os = "linux")]
@@ -25,6 +25,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let events = EventLoop::new();
     let window = WindowBuilder::new()
         .with_title("Cassette Studio")
+        .with_window_icon(Some(Icon::from_rgba(
+            include_bytes!("../../assets/cassette-studio-app.rgba").to_vec(),
+            128,
+            128,
+        )?))
         .with_inner_size(LogicalSize::new(1200.0, 640.0))
         .with_min_inner_size(LogicalSize::new(860.0, 560.0))
         .build(&events)?;

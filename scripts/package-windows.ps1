@@ -7,6 +7,8 @@ try {
     $destination = Join-Path $projectRoot 'dist\windows-x64'
     $toolsTarget = Join-Path $destination 'tools'
     New-Item -ItemType Directory -Force $destination, $toolsTarget | Out-Null
+    New-Item -ItemType Directory -Force "$destination\assets" | Out-Null
+    Copy-Item assets\cassette-studio-app.png "$destination\assets\cassette-studio-app.png" -Force
     Copy-Item -LiteralPath 'target\release\cassette-studio-desktop.exe' -Destination (Join-Path $destination 'CassetteStudio.exe') -Force
     Copy-Item -LiteralPath 'target\release\cassette-studio.exe' -Destination (Join-Path $destination 'cassette-studio-browser.exe') -Force
     foreach ($file in @('ffmpeg.exe','ffprobe.exe','yt-dlp.exe','FFmpeg-LICENSE.txt')) {

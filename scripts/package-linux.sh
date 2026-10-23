@@ -26,10 +26,13 @@ chmod 755 "$output/CassetteStudio" "$output/cassette-studio-browser" "$output/to
 for document in README.md README.ja.md LICENSE THIRD_PARTY_NOTICES.md; do
     cp "$project/$document" "$output/$document"
 done
+mkdir -p "$output/assets"
+cp "$project/assets/cassette-studio-app.png" "$output/assets/"
 tar -czf "$project/dist/CassetteStudio-Linux-Ubuntu24-x64.tar.gz" -C "$project/dist" linux-x64
 stage=/var/tmp/cassette-studio-deb
-mkdir -p "$stage/DEBIAN" "$stage/usr/lib/cassette-studio" "$stage/usr/bin" "$stage/usr/share/applications" "$stage/usr/share/icons/hicolor/scalable/apps"
+mkdir -p "$stage/DEBIAN" "$stage/usr/lib/cassette-studio" "$stage/usr/bin" "$stage/usr/share/applications" "$stage/usr/share/icons/hicolor/512x512/apps"
 mkdir -p "$stage/usr/share/doc/cassette-studio"
+cp -r "$output/assets" "$stage/usr/share/doc/cassette-studio/"
 cp "$project/LICENSE" "$stage/usr/share/doc/cassette-studio/copyright"
 cp "$output/README.md" "$output/README.ja.md" "$output/THIRD_PARTY_NOTICES.md" "$stage/usr/share/doc/cassette-studio/"
 cp -r "$output/CassetteStudio" "$output/cassette-studio-browser" "$output/tools" "$stage/usr/lib/cassette-studio/"
@@ -61,7 +64,7 @@ Icon=cassette-studio
 Terminal=false
 Categories=AudioVideo;Audio;
 EOF
-cp "$project/assets/cassette-studio.svg" "$stage/usr/share/icons/hicolor/scalable/apps/cassette-studio.svg"
+cp "$project/assets/cassette-studio-app.png" "$stage/usr/share/icons/hicolor/512x512/apps/cassette-studio.png"
 find "$stage" -type d -exec chmod 755 {} +
 find "$stage" -type f -exec chmod 644 {} +
 chmod 755 "$stage/usr/bin/cassette-studio" "$stage/usr/lib/cassette-studio/CassetteStudio" "$stage/usr/lib/cassette-studio/cassette-studio-browser" "$stage/usr/lib/cassette-studio/tools/node" "$stage/usr/lib/cassette-studio/tools/yt-dlp"

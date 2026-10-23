@@ -1,5 +1,7 @@
 # Cassette Studio
 
+<img src="assets/cassette-studio-app.png" width="96" alt="Cassette Studio icon">
+
 [English](README.md) · **日本語**
 
 カセットテープ用の選曲・録音準備アプリ。ソースコードは[MITライセンス](LICENSE)です。

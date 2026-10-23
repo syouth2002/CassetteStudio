@@ -7,7 +7,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
     $stage = Join-Path $root "dist\releases\v$Version\windows-x64"
     if (Test-Path -LiteralPath $stage) { throw "Stage already exists: $stage. Use a new clean staging path." }
-    New-Item -ItemType Directory -Force $stage, "$stage\scripts", "$stage\docs" | Out-Null
+    New-Item -ItemType Directory -Force $stage, "$stage\scripts", "$stage\docs", "$stage\assets" | Out-Null
+    Copy-Item assets\cassette-studio-app.png "$stage\assets\cassette-studio-app.png"
     Copy-Item target\release\cassette-studio-desktop.exe "$stage\CassetteStudio.exe"
     Copy-Item target\release\cassette-studio.exe "$stage\cassette-studio-browser.exe"
     Copy-Item scripts\setup-tools.ps1 "$stage\scripts\setup-tools.ps1"

@@ -31,6 +31,9 @@ wry = { version = "0.57", optional = true }
 tao = { version = "0.37", optional = true }
 rfd = { version = "0.17", optional = true }
 
+[target.'cfg(windows)'.build-dependencies]
+winresource = { version = "0.1", default-features = false }
+
 [profile.release]
 lto = true
 strip = true
