@@ -22,14 +22,16 @@
 
 Rustで動作する、カセットテープ用プレイリスト編集・音声書き出しアプリです。Windows / Linuxでは専用ウィンドウを持つスタンドアロンアプリとして使えます。UIはアプリ内蔵のWebView、音声処理・自動配置・保存はRustです。外部ブラウザやRustのインストールは通常利用に不要です。ブラウザ版も別途利用できます。
 
-## アプリを使う
+## ソースから作成するローカル同梱版
+
+以下はpackage-windows.ps1・package-linux.shで手元に作成する同梱版の説明です。GitHub Releasesの公開版は冒頭の手順で導入してください。公開版には外部音声ツールを同梱していません。
 
 - Windows：ビルド先の `CassetteStudio.exe` をダブルクリック。別PCへ移す場合は `dist/CassetteStudio-Windows-x64.zip` を展開し、フォルダ内のCassetteStudio.exeを起動してください。FFmpeg・FFprobe・yt-dlp・Nodeを同梱しています。WindowsのWebView2ランタイムを使用します。
 - Ubuntu 24.04以降のx64：`dist/CassetteStudio-Ubuntu24-amd64.deb` を `sudo apt install ./CassetteStudio-Ubuntu24-amd64.deb` でインストールし、アプリ一覧のCassette Studioを起動します。GTK/WebKitGTK・FFmpegなどはパッケージの依存関係として導入されます。yt-dlpとNodeを同梱します。
 - Linuxのtar.gz版：`dist/CassetteStudio-Linux-Ubuntu24-x64.tar.gz` を展開してCassetteStudioを実行します。WebKitGTK 4.1・GTK 3・libxdo・D-Bus・FFmpegとデスクトップ環境が必要です。他のディストリビューションは、その環境でソースからビルドしてください。
 - 初回は動作環境の優先言語が日本語なら日本語、それ以外は英語で表示します。右上の「日本語 / English」で変更した場合は、その選択を次回も優先します。ユーザーが付けた曲名・プレイリスト名は保持します。
 
-専用ウィンドウの起動時に音声エンジンも同じプロセスで起動し、ウィンドウを閉じると終了します。インターネットはURL取り込み以外の操作に不要です。内部通信は127.0.0.1:3210のみです。同じライブラリの同時起動は防止します。
+専用ウィンドウの起動時に音声エンジンも同じプロセスで起動し、ウィンドウを閉じると終了します。初回のツール導入後は、インターネットはURL取り込み以外の操作に不要です。内部通信は127.0.0.1:3210のみです。同じライブラリの同時起動は防止します。
 
 ## Windows / Visual Studio 2026
 
