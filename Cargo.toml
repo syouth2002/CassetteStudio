@@ -1,0 +1,36 @@
+[package]
+name = "cassette-studio"
+version = "0.1.0"
+edition = "2024"
+description = "Cross-platform cassette playlist editor and audio renderer"
+license = "MIT"
+repository = "https://github.com/syouth2002/CassetteStudio"
+default-run = "cassette-studio"
+
+[features]
+default = []
+desktop = ["dep:wry", "dep:tao", "dep:rfd"]
+
+[[bin]]
+name = "cassette-studio-desktop"
+path = "src/bin/desktop.rs"
+required-features = ["desktop"]
+
+[dependencies]
+axum = { version = "0.8", features = ["multipart"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4", "serde"] }
+tower-http = { version = "0.6", features = ["fs", "limit"] }
+url = "2"
+fs2 = "0.4"
+directories = "6"
+encoding_rs = "0.8"
+wry = { version = "0.57", optional = true }
+tao = { version = "0.37", optional = true }
+rfd = { version = "0.17", optional = true }
+
+[profile.release]
+lto = true
+strip = true

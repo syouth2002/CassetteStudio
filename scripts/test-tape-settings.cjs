@@ -1,0 +1,17 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const app=fs.readFileSync('web/app.js','utf8'),html=fs.readFileSync('web/index.html','utf8');
+const controls=new Map();
+const $=id=>{if(!controls.has(id))controls.set(id,{value:''});return controls.get(id);};
+let settings={side_seconds:1815,length_correction:15,gap:2,fade:5,rewind:3,normalize:false};
+const context={$: $,config:()=>settings};vm.createContext(context);
+vm.runInContext(app.match(/const settingFields=.*;/)[0],context);
+for(const name of ['fillSettings','readSettings'])vm.runInContext(app.match(new RegExp('function '+name+'\\(\\)\\{[^\\n]+'))[0],context);
+context.fillSettings();assert.equal($('tape-preset').value,60);assert.equal($('side-minutes').value,30);assert.equal($('length-correction').value,15);
+let result=context.readSettings();assert.equal(result.side_seconds,1815);assert.equal(result.length_correction,15);
+settings={...settings,side_seconds:2205,length_correction:-15};context.fillSettings();assert.equal($('tape-preset').value,74);assert.equal($('length-correction').value,-15);
+assert.equal(context.readSettings().side_seconds,2205);
+settings={...settings,side_seconds:1800,length_correction:undefined};context.fillSettings();assert.equal($('length-correction').value,0);assert.equal(context.readSettings().side_seconds,1800);
+for(const n of [46,60,74,80,90,120])assert.ok(html.includes(`<option value="${n}"`));
+for(const id of ['gap','fade','rewind','entry-in','entry-out'])assert.match(html,new RegExp('id="'+id+'"[^>]*step="0.5"'));
+assert.ok(!html.includes('id="view-cards"')&&!app.includes("$('view-cards')"));
+console.log('PASS: corrected capacity, cassette-specific settings, presets, legacy settings, half-second inputs, text navigation');

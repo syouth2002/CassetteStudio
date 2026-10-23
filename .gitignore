@@ -1,0 +1,11 @@
+/target/
+/data/
+/tools/
+/work/
+/dist/
+/CassetteStudio.exe
+/.vs/
+*.user
+.env
+.env.*
+*.log

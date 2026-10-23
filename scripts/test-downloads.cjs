@@ -1,0 +1,20 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync('web/app.js','utf8');
+const a={id:'a',name:'Tape A',kind:'cassette',sides:[[],[]],settings:{side_seconds:1800}};
+const b={...a,id:'b',name:'Tape B',settings:{side_seconds:2400}};
+let current=a;
+const downloads={innerHTML:'',replaceChildren(){this.innerHTML='';}};
+const ctx={current:()=>current,lib:{tracks:[]},downloadCaches:new Map(),$:()=>downloads,esc:String,csText:(s,...v)=>s.replace(/\{(\d+)\}/g,(_,i)=>v[i])};
+vm.createContext(ctx);
+for(const name of ['showDownloads','syncDownloads'])vm.runInContext(source.match(new RegExp('function '+name+'\\([^\\n]+'))[0],ctx);
+const cache=c=>({collection:c.id,name:c.name,key:JSON.stringify([c.id,c.name,c.sides,c.settings,[]]),urls:[`/${c.id}-A.wav`,`/${c.id}-B.wav`]});
+ctx.showDownloads(cache(a));assert.match(downloads.innerHTML,/a-A.wav/);
+current=b;ctx.syncDownloads();assert.equal(downloads.innerHTML,'');
+// Completion of an earlier export must not expose its links on another cassette.
+ctx.showDownloads(cache(a));assert.equal(downloads.innerHTML,'');
+ctx.showDownloads(cache(b));assert.match(downloads.innerHTML,/b-A.wav/);
+current=a;ctx.syncDownloads();assert.match(downloads.innerHTML,/a-A.wav/);assert.ok(!downloads.innerHTML.includes('b-A.wav'));
+current={kind:'playlist',id:'p'};ctx.syncDownloads();assert.equal(downloads.innerHTML,'');
+current=undefined;ctx.syncDownloads();assert.equal(downloads.innerHTML,'');
+current=a;a.settings.side_seconds=1805;ctx.syncDownloads();assert.equal(downloads.innerHTML,'');
+console.log('PASS: cassette-specific WAV links, return selection, asynchronous completion, playlist/library, stale export settings');
