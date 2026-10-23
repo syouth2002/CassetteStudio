@@ -4,7 +4,21 @@
 
 カセットテープ用の選曲・録音準備アプリ。ソースコードは[MITライセンス](LICENSE)です。
 
-このリポジトリはソースコードの公開です。ビルド済み配布ファイルはまだGitHub Releasesに公開していません。以下の配布ファイル名は、ローカルでパッケージを作成した際の名前です。
+## ダウンロードして使う
+
+[GitHub Releases](https://github.com/syouth2002/CassetteStudio/releases/latest)から取得できます。
+
+| 環境 | 配布ファイル | 初回の使い方 |
+| --- | --- | --- |
+| Windows x64 | `CassetteStudio-0.1.0-Windows-x64.zip` | フォルダ全体を展開し、`SetupAudioTools.cmd`でFFmpeg・FFprobe・yt-dlpを取得した後、`CassetteStudio.exe`を起動します。WebView2が必要です。 |
+| Ubuntu 24.04 x64 | `CassetteStudio-0.1.0-Ubuntu24-amd64.deb` | `sudo apt install ./CassetteStudio-0.1.0-Ubuntu24-amd64.deb`で導入し、アプリ一覧から起動します。FFmpegなどは依存パッケージとして導入されます。 |
+| Linux x64展開版 | `CassetteStudio-0.1.0-Linux-Ubuntu24-x64.tar.gz` | 展開後にCassetteStudioを起動します。FFmpeg・GTK 3・WebKitGTK 4.1・libxdo・D-Busを別途導入してください。 |
+
+公開用の配布ファイルには、アプリ本体・日英の説明・画面画像・依存ライブラリのライセンスを含めています。外部音声ツールは同梱せず、別途導入します。Windowsの初回ツール取得にはネット接続が必要です。URL取り込みには[Node.js 22以上](https://nodejs.org/ja/download)、Linuxでは最新の[yt-dlp](https://github.com/yt-dlp/yt-dlp#installation)も用意してください。ローカル音声の取り込みにはNodeやyt-dlpは不要です。通常利用にRustは必要ありません。配布ファイルの検証にはリリースのSHA256SUMS.txtを使用できます。
+
+以下は架空のデモ曲を使ったWindows版の画面です。個人のライブラリや音源は含みません。
+
+![ライブラリと再生コントロール](docs/screenshots/library-ja.jpg)
 
 Rustで動作する、カセットテープ用プレイリスト編集・音声書き出しアプリです。Windows / Linuxでは専用ウィンドウを持つスタンドアロンアプリとして使えます。UIはアプリ内蔵のWebView、音声処理・自動配置・保存はRustです。外部ブラウザやRustのインストールは通常利用に不要です。ブラウザ版も別途利用できます。
 
@@ -48,9 +62,13 @@ sh scripts/start.sh
 
 または `cargo run --release --features desktop --bin cassette-studio-desktop --locked`。ブラウザ版は `sh scripts/start-browser.sh` です。Ubuntu 24.04のWSL環境でビルド・基本テストを確認しています。
 
+![カセットのA・B面と残り時間](docs/screenshots/cassette-ja.jpg)
+
 ## テープ時間と補正
 
 録音設定の時間は46 / 60 / 74 / 80 / 90 / 120分 / カスタムから選択します。「長さの補正（片面あたり・秒）」で各カセットの実測との差を補正できます。C60で＋15秒ならA/B各面30分15秒です。自動配置・残り時間・WAV書き出しは補正後の時間を使います。既存カセットは左ペインで選んでから録音設定を開きます。曲間・フェード・途中再生の巻き戻しは0.5秒刻みです。
+
+![テープ時間の補正・曲間・引き継ぎ・音量の設定](docs/screenshots/settings-ja.jpg)
 
 ## 使い方
 
@@ -124,3 +142,7 @@ Shift_JIS/CP932の日本語タグがLatin-1として読み取られ、制御文�
 ## ライセンス
 
 本プロジェクトは[MIT](LICENSE)です。外部ツールや依存ライブラリには別のライセンスが適用されます。[第三者ソフトウェアについて](THIRD_PARTY_NOTICES.md)を参照してください。
+
+## 公開用パッケージの作成
+
+Windowsはscripts/package-public-windows.ps1、Linuxはビルド後にscripts/package-public-linux.shを使用します。dist/releases/v0.1.0/へアプリ本体のみの配布ファイルを作ります。依存関係のライセンス収集にPython 3とRustに付属する著作権表示ファイルが必要です。従来のpackage-windows.ps1・package-linux.shは外部ツール同梱のローカル用パッケージを作成する補助スクリプトで、公開リリースには使用しません。

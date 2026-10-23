@@ -6,7 +6,19 @@ A Rust application for arranging cassette mixtapes, preparing deck playback, and
 
 Source code and documentation: [MIT](LICENSE). Dependencies and external tools retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
 
-This repository publishes source code. Prebuilt downloads have not yet been published to GitHub Releases. Package names below refer to output created locally by the packaging scripts.
+## Download and start
+
+Get the application from [GitHub Releases](https://github.com/syouth2002/CassetteStudio/releases/latest).
+
+| Platform | Download | First use |
+| --- | --- | --- |
+| Windows x64 | `CassetteStudio-0.1.0-Windows-x64.zip` | Extract the entire folder, run `SetupAudioTools.cmd` once to obtain FFmpeg/FFprobe and yt-dlp, then run `CassetteStudio.exe`. WebView2 must be installed. |
+| Ubuntu 24.04 x64 | `CassetteStudio-0.1.0-Ubuntu24-amd64.deb` | Run `sudo apt install ./CassetteStudio-0.1.0-Ubuntu24-amd64.deb`, then start Cassette Studio from the app menu. FFmpeg and system runtimes are installed as dependencies. |
+| Linux x64 archive | `CassetteStudio-0.1.0-Linux-Ubuntu24-x64.tar.gz` | Extract and launch `CassetteStudio`. Install FFmpeg, GTK 3, WebKitGTK 4.1, libxdo and D-Bus first. |
+
+Release downloads contain the app, bilingual instructions, screenshots and dependency notices. External audio tools are installed separately; they are not bundled in the public release. Windows first-time audio-tool setup needs internet access. For URL imports, install [Node.js 22+](https://nodejs.org/en/download); Linux also needs a current [yt-dlp](https://github.com/yt-dlp/yt-dlp#installation). Local audio imports do not need Node or yt-dlp. Rust is not needed to use these downloads. Check archive integrity against the release's `SHA256SUMS.txt`.
+
+Screenshots below show the Windows desktop application with fictional demo tracks. No personal library or music is included.
 
 ## Features
 
@@ -24,6 +36,8 @@ This repository publishes source code. Prebuilt downloads have not yet been publ
 - Recover a detectable legacy Japanese tag encoding error without modifying source media.
 
 First launch selects Japanese when the environment's preferred language is Japanese, otherwise English. A manual selection takes priority on subsequent launches. User-provided titles are preserved.
+
+![English library and playback controls](docs/screenshots/library-en.jpg)
 
 ## Windows / Visual Studio 2026
 
@@ -75,6 +89,8 @@ Other distributions should build from source. Linux build, startup, import, norm
 
 Import into **All tracks**, then use the sidebar + buttons to create playlists or empty cassettes. Double-click a track to play it. The source library cannot be reordered or deleted through the playlist editor; edit a playlist or cassette instead.
 
+![Cassette sides and remaining capacity](docs/screenshots/cassette-en.jpg)
+
 Select a cassette and open **Recording settings** to choose its nominal length and per-side correction. A single correction applies to both sides. Automatic arrangement, remaining-space displays, playback rendering and WAV export use corrected capacity.
 
 To fill several empty cassettes, create them and save their settings first. Use **Create cassette automatically** from a playlist or All tracks, then select destinations. Selected tracks are candidates, or the full displayed list when none are selected. Starting from an empty cassette uses the full library. Filled cassettes are not overwritten; some destinations can remain empty if tracks are insufficient.
@@ -84,6 +100,8 @@ Duplicate prevention uses source track IDs. An A-to-B continuation counts as one
 Continuation and fill settings affect newly arranged cassettes. For an existing cut, edit the playback range or recreate the cassette. With zero rewind, continuation starts at the cut; three seconds repeats the preceding three seconds. Silence settings apply to new imports. Reanalyzing existing media requires removing created cassettes first.
 
 For deck recording, connect computer audio to the deck, prepare the selected side, start the deck's recording, then start the five-second playback countdown. Side A stops at its end; turn the tape over and start B separately. Use media you are entitled to record.
+
+![Tape length correction, gaps, continuation and loudness settings](docs/screenshots/settings-en.jpg)
 
 ## Loudness
 
@@ -144,3 +162,7 @@ Tests generate synthetic media under `work/` and use isolated libraries. Coverag
 ## License
 
 [MIT](LICENSE), copyright 2026 syouth2002. Dependencies and external tools remain under their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The project license grants no rights to third-party music or videos.
+
+## Building public release packages
+
+Use `scripts/package-public-windows.ps1` on Windows and `scripts/package-public-linux.sh` after building the Linux binaries. These create application-only packages under `dist/releases/v0.1.0/`. Python 3 is required to collect exact dependency notices; keep the copyright files supplied with the Rust toolchain available. The separate `package-windows.ps1` and `package-linux.sh` helpers create local bundles with external tools and are not used for the public release.
