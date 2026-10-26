@@ -8,6 +8,8 @@ A Rust application for arranging cassette mixtapes, preparing deck playback, and
 
 Source code and documentation: [MIT](LICENSE). Dependencies and external tools retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
 
+The latest source includes Options, a recording reference tone and playback-range auto fit. The published v0.1.1 downloads below do not include these subsequent changes; build from source to use them.
+
 ## Download and start
 
 Get the application from [GitHub Releases](https://github.com/syouth2002/CassetteStudio/releases/latest).
@@ -20,7 +22,7 @@ Get the application from [GitHub Releases](https://github.com/syouth2002/Cassett
 
 Release downloads contain the app, bilingual instructions, screenshots and dependency notices. External audio tools are installed separately; they are not bundled in the public release. Windows first-time audio-tool setup needs internet access. For URL imports, install [Node.js 22+](https://nodejs.org/en/download); Linux also needs a current [yt-dlp](https://github.com/yt-dlp/yt-dlp#installation). Local audio imports do not need Node or yt-dlp. Rust is not needed to use these downloads. Check archive integrity against the release's `SHA256SUMS.txt`.
 
-Screenshots below show the Windows desktop application with fictional demo tracks. No personal library or music is included.
+Screenshots show the latest browser interface with fictional demo tracks. The desktop application uses the same controls. No personal library or music is included.
 
 ## Features
 
@@ -37,9 +39,55 @@ Screenshots below show the Windows desktop application with fictional demo track
 - Import individual URLs supported by yt-dlp. Playlist expansion, DRM, and sign-in-required media are not supported.
 - Recover a detectable legacy Japanese tag encoding error without modifying source media.
 
-First launch selects Japanese when the environment's preferred language is Japanese, otherwise English. A manual selection takes priority on subsequent launches. User-provided titles are preserved.
+First launch selects Japanese when the environment's preferred language is Japanese, otherwise English. Choose the language in **Options**; a manual selection takes priority on subsequent launches. User-provided titles are preserved.
 
 ![English library and playback controls](docs/screenshots/library-en.jpg)
+
+## Options
+
+Open **Options** in the top-right corner for shared tools and language selection. Each control has a short explanation.
+
+| Control | Scope and effect |
+| --- | --- |
+| Reference tone | Plays a tone for setting the deck recording level. |
+| Analyze loudness / DC | Measures selected tracks, or displayed tracks if none are selected. Keeps playback ranges; measurements are shared by cassettes using the same source. Enable corrections separately in recording settings. |
+| Reanalyze silence in the entire library | Updates leading/trailing silence and playback ranges using the current recording/import settings. Unavailable while any cassette contains tracks. |
+| Language | Select Japanese or English. First launch follows the environment; a manual selection is saved. |
+
+Loudness/DC measurement and silence reanalysis are separate operations. Completion notifications remain visible in front of the open Options dialog.
+
+![Options and short explanations](docs/screenshots/options-en.jpg)
+
+## Recording reference tone
+
+1. Connect the PC audio output to the deck recording input.
+2. Open **Options → Reference tone**. Choose 400Hz or 1kHz and a peak level from −30 to −3dBFS. Defaults: 400Hz, −12dBFS peak.
+3. Press **Play reference tone** and adjust the deck recording level to 0dB. The tone uses the same output device and playback volume as music.
+4. Press **Stop** or close the dialog, then record music without changing PC output volume or deck recording level. The tone also stops automatically after 60 seconds.
+
+Deck 0dB and digital dBFS are separate references. This does not guarantee music peaks at 0dB and is not Dolby calibration.
+
+![Recording reference tone](docs/screenshots/reference-tone-en.jpg)
+
+## Playback range and fade auto fit
+
+Select one cassette entry, open **Range / fades**, then press **Auto fit**. Review the result and press **Apply** to save it. Closing without applying leaves the entry unchanged.
+
+- When the source from the selected start offset to its end fits, restores that full remaining length and clears both fades.
+- When it overflows, trims the end to available side capacity after accounting for all other entries and gaps, then applies the recording settings fade-out duration.
+- Playback length is displayed to one decimal place and edited in 0.1-second steps. Display rounding alone preserves the existing precise duration.
+- Manual cassette additions use the same capacity and end-fade calculation. Entries with no available space are skipped with a notification; sources remain in the library. Manual additions do not automatically create side-B continuations.
+- Fades use 0.5-second increments within the entry length. Fragments shorter than 0.5 seconds receive no fade.
+
+Recording settings are in the cassette toolbar. Other views show **Creation / import settings**.
+
+![Playback range, fades and Auto fit](docs/screenshots/entry-fit-en.jpg)
+
+## Platform and planned-feature status
+
+Windows, Ubuntu 24.04 x64 and the browser interface are the current targets. macOS is a potential port; no macOS build, hardware validation or distribution package is currently provided.
+
+Dolby B/C-compatible encoding and decoding are not implemented. See the [Japanese research report with an English summary](docs/dolby-b-c-research.ja.md) for technical sources, calibration and interoperability work still required.
 
 ## Windows / Visual Studio 2026
 
@@ -93,7 +141,7 @@ Import into **All tracks**, then use the sidebar + buttons to create playlists o
 
 ![Cassette sides and remaining capacity](docs/screenshots/cassette-en.jpg)
 
-Select a cassette and open **Recording settings** to choose its nominal length and per-side correction. A single correction applies to both sides. Automatic arrangement, remaining-space displays, playback rendering and WAV export use corrected capacity.
+Select a cassette and open **Recording settings** in its toolbar to choose its nominal length and per-side correction. A single correction applies to both sides. Automatic arrangement, remaining-space displays, playback rendering and WAV export use corrected capacity.
 
 To fill several empty cassettes, create them and save their settings first. Use **Create cassette automatically** from a playlist or All tracks, then select destinations. Selected tracks are candidates, or the full displayed list when none are selected. Starting from an empty cassette uses the full library. Filled cassettes are not overwritten; some destinations can remain empty if tracks are insufficient.
 
@@ -157,6 +205,8 @@ cargo build --release --features desktop --bins --locked
 node scripts/test-i18n.cjs
 node scripts/test-tape-settings.cjs
 node scripts/test-downloads.cjs
+node scripts/test-reference-tone.cjs
+node scripts/test-entry-fit.cjs
 ```
 
 With FFmpeg available in `tools/` or set using `CASSETTE_FFMPEG`, build the CLI debug binary with `cargo build --locked`, then run:

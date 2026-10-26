@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const defaults={side_seconds:1800,length_correction:0,gap:2,fill_threshold:30,fade:5,continuation:'restart',rewind:3,silence_db:-50,silence_min:.2,normalize:false,remove_dc:false,target_lufs:-18,peak_db:-1};
-let gainTrackId=null;
+let gainTrackId=null,entryAutoDuration=null;
 const downloadCaches=new Map();
 let lib={tracks:[],collections:[]}, active='all',side=0, selected=new Set();
 let settings={...defaults},busy=0,saveChain=Promise.resolve(),drag=null,renderCache=null,batchTracks=[];
@@ -29,14 +29,17 @@ function mergeMeasurements(tracks){for(const t of tracks){const old=track(t.id);
 const isTape=()=>current()?.kind==='cassette';
 const total=(entries,s=config())=>entries.reduce((n,e)=>n+e.duration,0)+Math.max(0,entries.length-1)*s.gap;
 function entries(){const c=current();return !c?lib.tracks.map(t=>whole(t.id)):c.kind==='playlist'?c.tracks.map(whole):c.sides[side];}
+function fitTapeEntry(entry,sourceSeconds,occupied,s){const available=Math.max(0,s.side_seconds-occupied),remaining=Math.max(0,sourceSeconds-entry.offset);if(remaining<=0||available<.1)return null;const cut=remaining>available+.000001;const length=cut?Math.floor((available+1e-9)*10)/10:remaining;return {...entry,duration:length,fade_in:0,fade_out:cut?Math.min(s.fade,Math.floor((length+1e-9)*2)/2):0};}
 function whole(id){return {track_id:id,offset:0,duration:duration(track(id)),fade_in:0,fade_out:0,continuation:false};}
-function toast(msg){clearTimeout(toastTimer);$('toast').textContent=csTranslateMessage(msg);$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,8000);}
+function placeToast(){const dialogs=[...document.querySelectorAll('dialog[open]')];(dialogs.at(-1)||document.body).appendChild($('toast'));}
+function toast(msg){clearTimeout(toastTimer);placeToast();$('toast').textContent=csTranslateMessage(msg);$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,8000);}
+document.addEventListener('close',e=>{if(e.target.tagName==='DIALOG'&&e.target.contains($('toast')))placeToast();},true);
 async function api(path,body,method='POST'){
  const response=await fetch(path,body===undefined?{}:{method,headers:{'content-type':'application/json'},body:JSON.stringify(body)});
  let data;try{data=await response.json();}catch{throw new Error(csText("サーバーから応答を取得できません ({0})", response.status));}
  if(!response.ok)throw new Error(data.error||csText("処理に失敗しました ({0})", response.status));return data;
 }
-async function task(message,fn){busy++;$('busy-label').textContent=message;$('busy').hidden=false;document.querySelectorAll('.toolbar button,#export-btn,#record-btn,#save-settings,#reanalyze-btn').forEach(b=>b.disabled=true);try{return await fn();}catch(e){toast(e.message);return null;}finally{busy--;if(!busy){$('busy').hidden=true;document.querySelectorAll('.toolbar button,#export-btn,#record-btn,#save-settings,#reanalyze-btn').forEach(b=>b.disabled=false);}}}
+async function task(message,fn){busy++;$('busy-label').textContent=message;$('busy').hidden=false;document.querySelectorAll('.toolbar button,#tone-open,#analyze-volume,#export-btn,#record-btn,#save-settings,#reanalyze-btn').forEach(b=>b.disabled=true);try{return await fn();}catch(e){toast(e.message);return null;}finally{busy--;if(!busy){$('busy').hidden=true;document.querySelectorAll('.toolbar button,#tone-open,#analyze-volume,#export-btn,#record-btn,#save-settings,#reanalyze-btn').forEach(b=>b.disabled=false);}}}
 function persist(c){
  const copy=structuredClone(c);
  saveChain=saveChain.catch(()=>{}).then(()=>api('/api/collections',copy));
@@ -59,7 +62,7 @@ function drawSelection(){
  $('select-all').checked=list.length>0&&selected.size===list.length;$('select-all').indeterminate=selected.size>0&&selected.size<list.length;
 }
 function draw(){
- syncDownloads();drawNav();const c=current(),tape=isTape(),list=entries();selected=new Set([...selected].filter(i=>i<list.length));
+ syncDownloads();drawNav();const c=current(),tape=isTape(),list=entries();$('settings-btn').textContent=csText(tape?'⚙ 録音設定':'⚙ 作成・取り込み設定');$('analyze-volume').title=csText('選択した曲、未選択なら表示中の曲を解析します。結果は同じ音源を使う全カセットで共有します。');selected=new Set([...selected].filter(i=>i<list.length));
  $('collection-name').textContent=c?.name||csText("すべての曲");$('collection-type').textContent=tape?'YOUR PERSONAL MIXTAPE':c?'PLAYLIST':'YOUR MUSIC COLLECTION';
  $('collection-summary').textContent=tape?csText("{0} × 2面 / 曲間 {1}秒 / {2}", time(config().side_seconds), config().gap, config().continuation==='restart'?csText("引き継ぎ：最初から"):csText("引き継ぎ：途中からフェードイン")):csText("{0}曲 · 無音除去後 {1}", list.length, time(list.reduce((n,e)=>n+e.duration,0)));
  for(const id of ['rename-btn','delete-collection','add-library'])$(id).hidden=!c;
@@ -125,13 +128,13 @@ async function importFiles(files){if(!files.length)return;const destination=acti
  await task(csText("{0}件の音源を取り込み、前後の無音を解析しています…", files.length),async()=>{
   const form=new FormData();form.append('settings',JSON.stringify(config()));for(const f of files)form.append('files',f);
   const r=await fetch('/api/import',{method:'POST',body:form});const data=await r.json();if(!r.ok)throw Error(data.error||csText("取り込みに失敗しました"));
-  lib.tracks.push(...data.tracks);await attachTracks(data.tracks.map(t=>t.id),destination);draw();
-  toast(data.errors.length?csText("{0}件を追加。\n{1}", data.tracks.length, data.errors.join('\n')):csText("{0}件の音源を追加しました", data.tracks.length));
+  lib.tracks.push(...data.tracks);const skipped=await attachTracks(data.tracks.map(t=>t.id),destination);draw();
+  if(!skipped)toast(data.errors.length?csText("{0}件を追加。\n{1}", data.tracks.length, data.errors.join('\n')):csText("{0}件の音源を追加しました", data.tracks.length));
  });
 }
 async function attachTracks(ids,destination=active){const c=lib.collections.find(c=>c.id===destination);if(!c)return;
- if(c.kind==='playlist')c.tracks.push(...ids);else c.sides[side].push(...ids.filter(id=>duration(track(id))>0).map(whole));
- renderCache=null;await persist(c);
+ let skipped=0;if(c.kind==='playlist')c.tracks.push(...ids);else{const list=c.sides[side],s={...defaults,...c.settings};for(const id of ids){const e=whole(id);if(e.duration<=0)continue;const fitted=fitTapeEntry(e,e.duration,total(list,s)+(list.length?s.gap:0),s);if(fitted)list.push(fitted);else skipped++;}if(skipped)toast(csText('残り時間がないため、{0}曲をカセットに追加できませんでした。音源はライブラリに残っています。',skipped));}
+ renderCache=null;await persist(c);return skipped;
 }
 const settingFields=[['gap','gap'],['fill-threshold','fill_threshold'],['fade','fade'],['continuation','continuation'],['rewind','rewind'],['silence-db','silence_db'],['silence-min','silence_min'],['target-lufs','target_lufs'],['peak-db','peak_db']];
 function fillSettings(){const s=config();const nominal=s.side_seconds-(s.length_correction||0);$('side-minutes').value=nominal/60;$('length-correction').value=s.length_correction||0;const preset=[46,60,74,80,90,120].find(n=>Math.abs(n*30-nominal)<.001);$('tape-preset').value=preset||'custom';$('normalize').value=String(s.normalize);$('remove-dc').value=String(s.remove_dc||false);for(const [id,key]of settingFields)$(id).value=['gap','fade','rewind'].includes(key)?Math.max(key==='fade'?.5:0,Math.round(s[key]*2)/2):s[key];}
@@ -146,7 +149,7 @@ async function rendered(){
 }
 function showDownloads(cache){downloadCaches.set(cache.collection,cache);syncDownloads();}
 function syncDownloads(){const c=current(),cache=c?.kind==='cassette'?downloadCaches.get(c.id):null;const key=c?JSON.stringify([c.id,c.name,c.sides,c.settings,lib.tracks.map(t=>[t.id,t.manual_gain_db||0,t.dc||null])]):null;if(!cache||cache.key!==key){$('downloads').replaceChildren();return;}$('downloads').innerHTML=cache.urls.map((u,i)=>csText("<a href=\"{0}\" download=\"{1}-{2}.wav\">↓ SIDE {3} · WAVを保存</a>", esc(u), esc(cache.name), i?'B':'A', i?'B':'A')).join('');}
-function stop(){playGeneration++;clearTimeout(gapTimer);clearInterval(countdown);gapTimer=null;countdown=null;audio.pause();if(audio.src)audio.currentTime=player?.mode==='playlist'?player.list[player.index].offset+track(player.list[player.index].track_id).trim_start:0;player=null;$('play-btn').textContent='▶';$('playing-title').textContent=csText("再生する曲を選択");$('playing-detail').textContent='Cassette Studio';$('seek').value=0;$('elapsed').textContent='0:00';$('remaining').textContent='−0:00';markPlaying();}
+function stop(){window.csStopReferenceTone?.();playGeneration++;clearTimeout(gapTimer);clearInterval(countdown);gapTimer=null;countdown=null;audio.pause();if(audio.src)audio.currentTime=player?.mode==='playlist'?player.list[player.index].offset+track(player.list[player.index].track_id).trim_start:0;player=null;$('play-btn').textContent='▶';$('playing-title').textContent=csText("再生する曲を選択");$('playing-detail').textContent='Cassette Studio';$('seek').value=0;$('elapsed').textContent='0:00';$('remaining').textContent='−0:00';markPlaying();}
 function markPlaying(){document.querySelectorAll('#tracks tr').forEach(row=>row.classList.toggle('playing',!!player&&active===player.collection&&(!isTape()||side===player.side)&&+row.dataset.index===(player.rows?.[player.index]??player.index)));}
 function tapeIndex(position,p){let elapsed=0;for(let i=0;i<p.list.length;i++){elapsed+=p.list[i].duration;if(position<elapsed+p.gap||i===p.list.length-1)return i;elapsed+=p.gap;}return 0;}
 function startAt(i,p){return p.list.slice(0,i).reduce((n,e)=>n+e.duration+p.gap,0);}
@@ -224,7 +227,7 @@ let dragDepth=0;
 document.addEventListener('dragenter',e=>{if([...e.dataTransfer.types].includes('Files')){e.preventDefault();dragDepth++;$('drop-overlay').style.display='block';}});
 document.addEventListener('dragleave',e=>{if([...e.dataTransfer.types].includes('Files')&&--dragDepth<=0){dragDepth=0;$('drop-overlay').style.display='none';}});
 document.addEventListener('dragover',e=>e.preventDefault());document.addEventListener('drop',e=>{e.preventDefault();dragDepth=0;$('drop-overlay').style.display='none';if(e.dataTransfer.files.length)importFiles([...e.dataTransfer.files]);});
-$('url-btn').onclick=()=>$('url-dialog').showModal();$('url-form').onsubmit=async e=>{e.preventDefault();const url=$('url-input').value,destination=active,s=structuredClone(config());$('url-dialog').close();await task(csText("URLから音声を取得して解析しています…"),async()=>{const t=await api('/api/url',{url,settings:s});lib.tracks.push(t);await attachTracks([t.id],destination);draw();toast(csText("URLの音源を追加しました"));});};
+$('url-btn').onclick=()=>$('url-dialog').showModal();$('url-form').onsubmit=async e=>{e.preventDefault();const url=$('url-input').value,destination=active,s=structuredClone(config());$('url-dialog').close();await task(csText("URLから音声を取得して解析しています…"),async()=>{const t=await api('/api/url',{url,settings:s});lib.tracks.push(t);const skipped=await attachTracks([t.id],destination);draw();if(!skipped)toast(csText("URLの音源を追加しました"));});};
 $('tracks').onchange=e=>{if(e.target.type==='checkbox'){const i=+e.target.dataset.index;e.target.checked?selected.add(i):selected.delete(i);draw();}};
 $('tracks').onclick=e=>{if(e.target.closest('input'))return;const row=e.target.closest('tr');if(!row)return;const i=+row.dataset.index;if(e.ctrlKey||e.metaKey){selected.has(i)?selected.delete(i):selected.add(i);}else{selected=new Set([i]);}drawSelection();};
 $('tracks').ondblclick=e=>{const row=e.target.closest('tr');if(row)startPlayback(+row.dataset.index).catch(e=>toast(e.message));};
@@ -238,11 +241,14 @@ $('remove-selected').onclick=()=>{const c=current();if(!c||!selected.size)return
 $('move-side').onclick=()=>{const c=current();if(!isTape())return;c.sides[1-side].push(...c.sides[side].filter((_,i)=>selected.has(i)));c.sides[side]=c.sides[side].filter((_,i)=>!selected.has(i));selected.clear();changed();};
 $('add-library').onclick=()=>{$('picker-list').innerHTML=lib.tracks.map(t=>`<label><input type="checkbox" value="${esc(t.id)}"><span>${esc(t.title)} <small> · ${time(duration(t))}</small></span></label>`).join('');$('picker-dialog').showModal();};
 $('picker-add').onclick=async()=>{const ids=[...$('picker-list').querySelectorAll('input:checked')].map(el=>el.value);await attachTracks(ids);$('picker-dialog').close();changed();};
-$('edit-entry').onclick=()=>{if(selected.size!==1)return;const e=entries()[[...selected][0]];for(const [id,key]of [['entry-offset','offset'],['entry-duration','duration'],['entry-in','fade_in'],['entry-out','fade_out']])$(id).value=key.startsWith('fade_')?Math.round(e[key]*2)/2:e[key];$('entry-dialog').showModal();};
-$('entry-form').onsubmit=e=>{e.preventDefault();const entry=entries()[[...selected][0]],candidate={...entry};for(const [id,key]of [['entry-offset','offset'],['entry-duration','duration'],['entry-in','fade_in'],['entry-out','fade_out']])candidate[key]=+$(id).value;if(candidate.offset+candidate.duration>duration(track(entry.track_id))+.001||candidate.fade_in>candidate.duration||candidate.fade_out>candidate.duration){toast(csText("曲の長さとフェードの範囲を確認してください"));return;}Object.assign(entry,candidate);$('entry-dialog').close();changed();};
+$('edit-entry').onclick=()=>{if(selected.size!==1)return;entryAutoDuration=null;const e=entries()[[...selected][0]];for(const [id,key]of [['entry-offset','offset'],['entry-duration','duration'],['entry-in','fade_in'],['entry-out','fade_out']])$(id).value=key==='duration'?e[key].toFixed(1):key.startsWith('fade_')?Math.round(e[key]*2)/2:e[key];$('entry-dialog').showModal();};
+$('entry-auto').onclick=()=>{const index=[...selected][0],list=entries(),entry=list[index],s=config(),offset=+$('entry-offset').value;if(!Number.isFinite(offset)||offset<0){toast(csText('曲の長さとフェードの範囲を確認してください'));return;}const occupied=list.reduce((n,e,i)=>n+(i===index?0:e.duration),0)+Math.max(0,list.length-1)*s.gap;const fitted=fitTapeEntry({...entry,offset},duration(track(entry.track_id)),occupied,s);if(!fitted){toast(csText('この面に再生時間を確保できません。ほかの曲を移動・削除してください'));return;}entryAutoDuration=fitted.duration;for(const [id,key]of [['entry-duration','duration'],['entry-in','fade_in'],['entry-out','fade_out']])$(id).value=key==='duration'?fitted[key].toFixed(1):fitted[key];};
+$('entry-duration').oninput=()=>{entryAutoDuration=null;};
+$('entry-form').onsubmit=e=>{e.preventDefault();const entry=entries()[[...selected][0]],candidate={...entry};for(const [id,key]of [['entry-offset','offset'],['entry-duration','duration'],['entry-in','fade_in'],['entry-out','fade_out']])candidate[key]=+$(id).value;if(entryAutoDuration!==null&&candidate.duration===Number(entryAutoDuration.toFixed(1)))candidate.duration=entryAutoDuration;else if(candidate.offset===entry.offset&&candidate.duration===Number(entry.duration.toFixed(1)))candidate.duration=entry.duration;const remaining=duration(track(entry.track_id))-candidate.offset;if(candidate.duration>remaining&&candidate.duration-remaining<=.050001)candidate.duration=remaining;if(!Number.isFinite(candidate.fade_in)||!Number.isFinite(candidate.fade_out)||!Number.isFinite(candidate.offset)||!Number.isFinite(candidate.duration)||candidate.offset<0||candidate.duration<=0||candidate.fade_in<0||candidate.fade_out<0||candidate.offset+candidate.duration>duration(track(entry.track_id))+.001||candidate.fade_in>candidate.duration||candidate.fade_out>candidate.duration){toast(csText("曲の長さとフェードの範囲を確認してください"));return;}Object.assign(entry,candidate);$('entry-dialog').close();changed();};
+$('options-btn').onclick=()=>$('options-dialog').showModal();
 $('settings-btn').onclick=()=>{fillSettings();$('settings-dialog').returnValue='';$('settings-dialog').showModal();};$('tape-preset').onchange=e=>{if(e.target.value!=='custom')$('side-minutes').value=+e.target.value/2;};$('side-minutes').oninput=()=>$('tape-preset').value='custom';
 $('settings-dialog').addEventListener('close',()=>{if($('settings-dialog').returnValue==='save')saveSettings();});
-$('reanalyze-btn').onclick=async()=>{if(!await askConfirm(csText("ライブラリ全曲の無音を再解析します。作成済みカセットがある場合は先に削除が必要です。続けますか？")))return;const s=readSettings();$('settings-dialog').close('cancel');await task(csText("ライブラリの無音を再解析しています…"),async()=>{lib=await api('/api/reanalyze',s,'PUT');settings=s;localStorage.setItem('cs-settings',JSON.stringify(s));renderCache=null;draw();toast(csText("無音の再解析が完了しました"));});};
+$('reanalyze-btn').onclick=async()=>{if(!await askConfirm(csText("ライブラリ全曲の無音を再解析します。作成済みカセットがある場合は先に削除が必要です。続けますか？")))return;const s=structuredClone(config());stop();$('options-dialog').close();await task(csText("ライブラリの無音を再解析しています…"),async()=>{lib=await api('/api/reanalyze',s,'PUT');settings=s;localStorage.setItem('cs-settings',JSON.stringify(s));renderCache=null;draw();toast(csText("無音の再解析が完了しました"));});};
 $('export-btn').onclick=()=>task(csText("A・B面をWAVに書き出しています…"),async()=>{const cache=await rendered();showDownloads(cache);toast(csText("書き出しが完了しました。A・B面をそれぞれ保存できます"));});
 $('record-btn').onclick=()=>task(csText("デッキ録音用の音声を準備しています…"),async()=>{const cache=await rendered();showDownloads(cache);await loadTape(cache,side,0,false);$('record-detail').textContent=`${cache.name} / SIDE ${side?'B':'A'} / ${time(cache.settings.side_seconds)}`;$('record-start').textContent=csText("5秒後に再生開始");$('record-start').disabled=false;$('record-dialog').showModal();});
 $('record-start').onclick=()=>{$('record-start').disabled=true;let remaining=5;$('record-start').textContent=csText("{0}秒後に開始…", remaining);countdown=setInterval(()=>{remaining--;$('record-start').textContent=csText("{0}秒後に開始…", remaining);if(remaining<=0){clearInterval(countdown);countdown=null;$('record-dialog').close();audio.play().then(()=>$('play-btn').textContent='Ⅱ').catch(e=>toast(e.message));}},1000);};

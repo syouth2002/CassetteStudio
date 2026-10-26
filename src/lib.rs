@@ -221,6 +221,15 @@ pub async fn start_server() -> Result<Server, Box<dyn std::error::Error>> {
             get(|| async { Html(include_str!("../web/index.html")) }),
         )
         .route(
+            "/reference-tone.js",
+            get(|| async {
+                (
+                    [("content-type", "text/javascript; charset=utf-8")],
+                    include_str!("../web/reference-tone.js"),
+                )
+            }),
+        )
+        .route(
             "/app.js",
             get(|| async {
                 (

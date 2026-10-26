@@ -1,0 +1,35 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync('web/app.js','utf8'),context={};vm.createContext(context);
+vm.runInContext(source.match(/function fitTapeEntry\([^\n]+/)[0],context);
+const entry={track_id:'test',offset:0,duration:200,fade_in:4,fade_out:5},s={side_seconds:100,fade:5,gap:2};
+let result=context.fitTapeEntry(entry,30,60,s);
+assert.equal(result.duration,30);assert.equal(result.fade_in,0);assert.equal(result.fade_out,0);
+result=context.fitTapeEntry(entry,200,60,s);assert.equal(result.duration,40);assert.equal(result.fade_out,5);
+result=context.fitTapeEntry({...entry,offset:20},50,60,s);assert.equal(result.duration,30);assert.equal(result.fade_out,0);
+result=context.fitTapeEntry(entry,200,98.73,s);assert.equal(result.duration,1.2);assert.equal(result.fade_out,1);
+assert.equal(context.fitTapeEntry(entry,200,100,s),null);
+assert.equal(context.fitTapeEntry(entry,200,110,s),null);
+// Sequential additions include every intervening gap and never overrun a side.
+const list=[];for(const duration of [40,100,30]){const occupied=list.reduce((n,e)=>n+e.duration,0)+list.length*s.gap;const fitted=context.fitTapeEntry({...entry,fade_in:0,fade_out:0},duration,occupied,s);if(fitted)list.push(fitted);}
+assert.equal(list.length,2);assert.equal(list[1].duration,58);assert.equal(list[1].fade_out,5);
+assert.equal(list.reduce((n,e)=>n+e.duration,0)+(list.length-1)*s.gap,100);
+const html=fs.readFileSync('web/index.html','utf8');assert.match(html,/id="entry-duration"[^>]*step="0.1"/);
+assert.match(html,/id="entry-auto" type="button"/);
+const controls=new Map();context.$=id=>{if(!controls.has(id))controls.set(id,{value:0,close(){},showModal(){}});return controls.get(id);};
+let editedList=[{...entry,duration:60.06},{...entry,duration:20}];
+context.entries=()=>editedList;context.selected=new Set([0]);context.config=()=>({...s,side_seconds:82.08});
+context.track=()=>({});context.duration=()=>60.06;context.csText=s=>s;
+context.toast=()=>assert.fail('Unexpected validation error');context.changed=()=>{};
+vm.runInContext('let entryAutoDuration=null;',context);
+for(const prefix of ["$('edit-entry').onclick=", "$('entry-auto').onclick=", "$('entry-form').onsubmit="]){
+ vm.runInContext(source.split('\n').find(line=>line.startsWith(prefix)),context);
+}
+context.$('edit-entry').onclick();assert.equal(context.$('entry-duration').value,'60.1');
+context.$('entry-auto').onclick();assert.equal(Number(context.$('entry-out').value),0);
+context.$('entry-form').onsubmit({preventDefault(){}});
+assert.equal(editedList[0].duration,60.06,'Rounded display must preserve exact fitting duration on apply');
+context.config=()=>({...s,side_seconds:72.08});
+context.$('edit-entry').onclick();context.$('entry-auto').onclick();
+context.$('entry-form').onsubmit({preventDefault(){}});
+assert.equal(editedList[0].duration,50);assert.equal(editedList[0].fade_out,5);
+console.log('PASS: fade removal, capacity/offset/gaps, clipped fade, full side, sequential additions, 0.1-second display');
