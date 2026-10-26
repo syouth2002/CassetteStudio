@@ -4,11 +4,11 @@
 
 **English** · [日本語](README.ja.md)
 
-A Rust application for arranging cassette mixtapes, preparing deck playback, and exporting audio. Windows and Linux run in a standalone desktop window with an embedded WebView. A local browser interface is also available. The interface supports Japanese and English.
+A Rust application for arranging cassette mixtapes, preparing deck playback, and exporting audio. Windows, Linux and macOS run in a standalone desktop window with an embedded WebView. A local browser interface is also available. The interface supports Japanese and English.
 
 Source code and documentation: [MIT](LICENSE). Dependencies and external tools retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
 
-The latest source includes Options, a recording reference tone and playback-range auto fit. The published v0.1.1 downloads below do not include these subsequent changes; build from source to use them.
+Version 0.1.2 includes Options, a recording reference tone, playback-range auto fit and macOS application packages.
 
 ## Download and start
 
@@ -16,9 +16,11 @@ Get the application from [GitHub Releases](https://github.com/syouth2002/Cassett
 
 | Platform | Download | First use |
 | --- | --- | --- |
-| Windows x64 | `CassetteStudio-0.1.1-Windows-x64.zip` | Extract the entire folder, run `SetupAudioTools.cmd` once to obtain FFmpeg/FFprobe and yt-dlp, then run `CassetteStudio.exe`. WebView2 must be installed. |
-| Ubuntu 24.04 x64 | `CassetteStudio-0.1.1-Ubuntu24-amd64.deb` | Run `sudo apt install ./CassetteStudio-0.1.1-Ubuntu24-amd64.deb`, then start Cassette Studio from the app menu. FFmpeg and system runtimes are installed as dependencies. |
-| Linux x64 archive | `CassetteStudio-0.1.1-Linux-Ubuntu24-x64.tar.gz` | Extract and launch `CassetteStudio`. Install FFmpeg, GTK 3, WebKitGTK 4.1, libxdo and D-Bus first. |
+| Windows x64 | `CassetteStudio-0.1.2-Windows-x64.zip` | Extract the entire folder, run `SetupAudioTools.cmd` once to obtain FFmpeg/FFprobe and yt-dlp, then run `CassetteStudio.exe`. WebView2 must be installed. |
+| Ubuntu 24.04 x64 | `CassetteStudio-0.1.2-Ubuntu24-amd64.deb` | Run `sudo apt install ./CassetteStudio-0.1.2-Ubuntu24-amd64.deb`, then start Cassette Studio from the app menu. FFmpeg and system runtimes are installed as dependencies. |
+| Linux x64 archive | `CassetteStudio-0.1.2-Linux-Ubuntu24-x64.tar.gz` | Extract and launch `CassetteStudio`. Install FFmpeg, GTK 3, WebKitGTK 4.1, libxdo and D-Bus first. |
+| macOS 15+ Apple Silicon | `CassetteStudio-0.1.2-macOS-arm64.zip` | Extract, move `Cassette Studio.app` to Applications and install external tools as described below. |
+| macOS 15+ Intel | `CassetteStudio-0.1.2-macOS-x64.zip` | Same steps; use the Intel archive. |
 
 Release downloads contain the app, bilingual instructions, screenshots and dependency notices. External audio tools are installed separately; they are not bundled in the public release. Windows first-time audio-tool setup needs internet access. For URL imports, install [Node.js 22+](https://nodejs.org/en/download); Linux also needs a current [yt-dlp](https://github.com/yt-dlp/yt-dlp#installation). Local audio imports do not need Node or yt-dlp. Rust is not needed to use these downloads. Check archive integrity against the release's `SHA256SUMS.txt`.
 
@@ -85,7 +87,7 @@ Recording settings are in the cassette toolbar. Other views show **Creation / im
 
 ## Platform and planned-feature status
 
-Windows, Ubuntu 24.04 x64 and the browser interface are the current targets. macOS is a potential port; no macOS build, hardware validation or distribution package is currently provided.
+Windows x64, Ubuntu 24.04 x64, macOS 15+ (Apple Silicon / Intel), and the browser interface are supported build targets. macOS packages are built separately on GitHub-hosted Mac runners and checked for native app startup, audio import and DC/fade WAV rendering. Physical audio output and deck recording on a Mac have not been verified.
 
 Dolby B/C-compatible encoding and decoding are not implemented. See the [Japanese research report with an English summary](docs/dolby-b-c-research.ja.md) for technical sources, calibration and interoperability work still required.
 
@@ -181,6 +183,32 @@ WebView preferences use the same root. Distribution files and this repository ex
 
 Tool discovery checks overrides, `tools/` beside the executable, the executable directory, development `tools/`, and PATH.
 
+## macOS
+
+Download the **arm64** archive for Apple Silicon or **x64** for Intel. Extract the folder, move **Cassette Studio.app** to Applications, and launch it. The app uses macOS WebKit; Rust and an external browser are unnecessary for normal desktop use.
+
+Audio tools are not bundled. With [Homebrew](https://brew.sh) installed, run:
+
+```sh
+brew install ffmpeg
+# Optional, for URL imports:
+brew install yt-dlp node
+```
+
+The archive also includes **SetupAudioTools.command**, which installs all three through an existing Homebrew installation. Finder launches find tools in `/opt/homebrew/bin` and `/usr/local/bin`, in addition to the usual tool overrides and PATH.
+
+**The macOS app is ad-hoc signed, without Apple Developer ID signing or notarization.** Gatekeeper may prevent it from opening under default security settings. It is an experimental distribution; see [Apple's explanation of unidentified developers](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac). No signing certificate or notarization account is included.
+
+For development, install Xcode Command Line Tools and Rust stable, then run:
+
+```sh
+cargo run --release --features desktop --bin cassette-studio-desktop --locked
+# Package the current Mac architecture:
+sh scripts/package-public-macos.sh 0.1.2
+```
+
+Apple Silicon and Intel packages are built separately. `scripts/test-macos-package.py` tests the packaged native app and browser executable using synthetic audio and a temporary library. These checks do not replace physical playback/recording tests.
+
 ## DC offset removal
 
 In Recording settings, enable **Remove DC offset** (initially OFF). The option is saved per playlist/cassette. **Analyze loudness / DC** analyzes selected tracks, or the displayed list when none are selected; older tracks are analyzed automatically when correction is needed for playback or export. The track loudness dialog shows separate left/right offsets as a percentage of full scale.
@@ -226,4 +254,4 @@ Tests generate synthetic media under `work/` and use isolated libraries. Coverag
 
 ## Building public release packages
 
-Use `scripts/package-public-windows.ps1` on Windows and `scripts/package-public-linux.sh` after building the Linux binaries. These create application-only packages under `dist/releases/v0.1.1/`. Python 3 is required to collect exact dependency notices; keep the copyright files supplied with the Rust toolchain available. The separate `package-windows.ps1` and `package-linux.sh` helpers create local bundles with external tools and are not used for the public release.
+Use `scripts/package-public-windows.ps1` on Windows, `scripts/package-public-linux.sh` after building the Linux binaries, and `scripts/package-public-macos.sh` on each Mac architecture. These create application-only packages under `dist/releases/v0.1.2/`. Python 3 is required to collect exact dependency notices; keep the copyright files supplied with the Rust toolchain available. The separate `package-windows.ps1` and `package-linux.sh` helpers create local bundles with external tools and are not used for the public release.

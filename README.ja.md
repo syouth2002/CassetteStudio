@@ -6,7 +6,7 @@
 
 カセットテープ用の選曲・録音準備アプリ。ソースコードは[MITライセンス](LICENSE)です。
 
-最新版ソースには、オプション画面・録音用基準音・再生範囲の自動設定が含まれます。以下の公開済み配布版v0.1.1には、これらの追加変更は含まれません。最新版はソースからビルドしてください。
+v0.1.2には、オプション画面・録音用基準音・再生範囲の自動設定と、macOS用アプリの配布ファイルが含まれます。
 
 ## ダウンロードして使う
 
@@ -14,9 +14,11 @@
 
 | 環境 | 配布ファイル | 初回の使い方 |
 | --- | --- | --- |
-| Windows x64 | `CassetteStudio-0.1.1-Windows-x64.zip` | フォルダ全体を展開し、`SetupAudioTools.cmd`でFFmpeg・FFprobe・yt-dlpを取得した後、`CassetteStudio.exe`を起動します。WebView2が必要です。 |
-| Ubuntu 24.04 x64 | `CassetteStudio-0.1.1-Ubuntu24-amd64.deb` | `sudo apt install ./CassetteStudio-0.1.1-Ubuntu24-amd64.deb`で導入し、アプリ一覧から起動します。FFmpegなどは依存パッケージとして導入されます。 |
-| Linux x64展開版 | `CassetteStudio-0.1.1-Linux-Ubuntu24-x64.tar.gz` | 展開後にCassetteStudioを起動します。FFmpeg・GTK 3・WebKitGTK 4.1・libxdo・D-Busを別途導入してください。 |
+| Windows x64 | `CassetteStudio-0.1.2-Windows-x64.zip` | フォルダ全体を展開し、`SetupAudioTools.cmd`でFFmpeg・FFprobe・yt-dlpを取得した後、`CassetteStudio.exe`を起動します。WebView2が必要です。 |
+| Ubuntu 24.04 x64 | `CassetteStudio-0.1.2-Ubuntu24-amd64.deb` | `sudo apt install ./CassetteStudio-0.1.2-Ubuntu24-amd64.deb`で導入し、アプリ一覧から起動します。FFmpegなどは依存パッケージとして導入されます。 |
+| Linux x64展開版 | `CassetteStudio-0.1.2-Linux-Ubuntu24-x64.tar.gz` | 展開後にCassetteStudioを起動します。FFmpeg・GTK 3・WebKitGTK 4.1・libxdo・D-Busを別途導入してください。 |
+| macOS 15以降・Apple Silicon | `CassetteStudio-0.1.2-macOS-arm64.zip` | 展開し、`Cassette Studio.app`をアプリケーションへ移動。下記のmacOS手順で外部音声ツールを導入します。 |
+| macOS 15以降・Intel | `CassetteStudio-0.1.2-macOS-x64.zip` | Intel用アーカイブを選び、同じ手順で導入します。 |
 
 公開用の配布ファイルには、アプリ本体・日英の説明・画面画像・依存ライブラリのライセンスを含めています。外部音声ツールは同梱せず、別途導入します。Windowsの初回ツール取得にはネット接続が必要です。URL取り込みには[Node.js 22以上](https://nodejs.org/ja/download)、Linuxでは最新の[yt-dlp](https://github.com/yt-dlp/yt-dlp#installation)も用意してください。ローカル音声の取り込みにはNodeやyt-dlpは不要です。通常利用にRustは必要ありません。配布ファイルの検証にはリリースのSHA256SUMS.txtを使用できます。
 
@@ -24,7 +26,7 @@
 
 ![ライブラリと再生コントロール](docs/screenshots/library-ja.jpg)
 
-Rustで動作する、カセットテープ用プレイリスト編集・音声書き出しアプリです。Windows / Linuxでは専用ウィンドウを持つスタンドアロンアプリとして使えます。UIはアプリ内蔵のWebView、音声処理・自動配置・保存はRustです。外部ブラウザやRustのインストールは通常利用に不要です。ブラウザ版も別途利用できます。
+Rustで動作する、カセットテープ用プレイリスト編集・音声書き出しアプリです。Windows / Linux / macOSでは専用ウィンドウを持つスタンドアロンアプリとして使えます。UIはアプリ内蔵のWebView、音声処理・自動配置・保存はRustです。外部ブラウザやRustのインストールは通常利用に不要です。ブラウザ版も別途利用できます。
 
 ## ソースから作成するローカル同梱版
 
@@ -69,6 +71,32 @@ sh scripts/start.sh
 または `cargo run --release --features desktop --bin cassette-studio-desktop --locked`。ブラウザ版は `sh scripts/start-browser.sh` です。Ubuntu 24.04のWSL環境でビルド・基本テストを確認しています。
 
 ![カセットのA・B面と残り時間](docs/screenshots/cassette-ja.jpg)
+
+## macOS
+
+Apple Siliconは**arm64**版、Intel Macは**x64**版を選びます。ZIPを展開し、**Cassette Studio.app**を「アプリケーション」へ移動して起動します。macOSのWebKitを利用するため、通常利用にRustや外部ブラウザは不要です。
+
+外部音声ツールは同梱していません。[Homebrew](https://brew.sh)を導入済みの場合は、次を実行します。
+
+```sh
+brew install ffmpeg
+# URL取り込みを使う場合:
+brew install yt-dlp node
+```
+
+同梱の**SetupAudioTools.command**でも、導入済みのHomebrewを使って3つのツールを取得できます。Finderから起動する場合も、`/opt/homebrew/bin`・`/usr/local/bin`のツールを探します。環境変数によるツール指定も利用できます。
+
+**macOS版はアドホック署名で、Apple Developer IDの署名・公証はありません。** 標準のセキュリティ設定で起動を制限される場合があります。試験的な配布版として扱ってください。[Appleの提供元未確認アプリについての説明](https://support.apple.com/ja-jp/guide/mac-help/mh40616/mac)も参照してください。
+
+開発にはXcode Command Line ToolsとRust stableを用意します。
+
+```sh
+cargo run --release --features desktop --bin cassette-studio-desktop --locked
+# 現在のMacのアーキテクチャ用パッケージを作成:
+sh scripts/package-public-macos.sh 0.1.2
+```
+
+Apple Silicon／Intelは別々に作成します。`scripts/test-macos-package.py`は合成音源と一時ライブラリで、配布アプリとブラウザ用実行ファイルを検証します。物理的な再生・録音の確認を代替するものではありません。
 
 ## テープ時間と補正
 
@@ -116,7 +144,7 @@ sh scripts/start.sh
 
 ## 対応状況と今後の機能
 
-Windows・Ubuntu 24.04 x64とブラウザ版を対象にしています。macOSは移植候補で、ビルド・実機検証・配布版の作成は未実施です。
+Windows x64・Ubuntu 24.04 x64・macOS 15以降（Apple Silicon／Intel）とブラウザ版を対象にしています。macOSはGitHub上のMac環境でアーキテクチャごとにビルドし、アプリ起動・音源取り込み・DC／フェードを含むWAV生成を検証します。Mac実機の音声出力やデッキ録音は未確認です。
 
 Dolby B/C相当のエンコード・デコードは未実装です。[実装調査資料](docs/dolby-b-c-research.ja.md)に原理・公開資料・校正と実機検証の課題をまとめています。
 
@@ -197,7 +225,7 @@ Shift_JIS/CP932の日本語タグがLatin-1として読み取られ、制御文�
 
 ## 公開用パッケージの作成
 
-Windowsはscripts/package-public-windows.ps1、Linuxはビルド後にscripts/package-public-linux.shを使用します。dist/releases/v0.1.1/へアプリ本体のみの配布ファイルを作ります。依存関係のライセンス収集にPython 3とRustに付属する著作権表示ファイルが必要です。従来のpackage-windows.ps1・package-linux.shは外部ツール同梱のローカル用パッケージを作成する補助スクリプトで、公開リリースには使用しません。
+Windowsはscripts/package-public-windows.ps1、Linuxはビルド後にscripts/package-public-linux.sh、macOSは各Mac環境でscripts/package-public-macos.shを使用します。dist/releases/v0.1.2/へアプリ本体のみの配布ファイルを作ります。依存関係のライセンス収集にPython 3とRustに付属する著作権表示ファイルが必要です。従来のpackage-windows.ps1・package-linux.shは外部ツール同梱のローカル用パッケージを作成する補助スクリプトで、公開リリースには使用しません。
 
 ## DCオフセットの除去
 
