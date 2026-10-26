@@ -73,6 +73,13 @@ pub fn tool(name: &str) -> PathBuf {
             }
         }
     }
+    #[cfg(target_os = "macos")]
+    for prefix in ["/opt/homebrew/bin", "/usr/local/bin"] {
+        let candidate = Path::new(prefix).join(&exe);
+        if candidate.is_file() {
+            return candidate;
+        }
+    }
     let local = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tools")
         .join(&exe);

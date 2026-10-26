@@ -1,0 +1,36 @@
+name: macOS packages
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Toolchain and audio tools
+        run: |
+          rustup update stable --no-self-update
+          rustup default stable
+          brew install ffmpeg
+      - name: Build and package
+        run: sh scripts/package-public-macos.sh 0.1.2
+      - name: Native app and audio smoke test
+        run: python3 scripts/test-macos-package.py dist/releases/v0.1.2/macos-${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: dist/releases/v0.1.2/CassetteStudio-0.1.2-macOS-${{ matrix.arch }}.zip
+          if-no-files-found: error
