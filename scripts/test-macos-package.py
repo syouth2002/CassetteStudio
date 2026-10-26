@@ -1,7 +1,12 @@
 """Check the packaged native app and CLI using an isolated synthetic library."""
-import json,os,pathlib,subprocess,sys,tempfile,time,urllib.request,wave,math,struct
+import json,os,pathlib,subprocess,sys,tempfile,time,urllib.request,wave,math,struct,plistlib
 stage=pathlib.Path(sys.argv[1]).resolve()
 app=stage/'Cassette Studio.app'
+with (app/'Contents/Info.plist').open('rb') as stream:
+    policy=plistlib.load(stream)['NSAppTransportSecurity']
+    assert policy['NSAllowsLocalNetworking']
+    assert policy['NSExceptionDomains']['127.0.0.1']['NSExceptionAllowsInsecureHTTPLoads']
+    assert not policy.get('NSAllowsArbitraryLoads',False)
 subprocess.run(['codesign','--verify','--deep','--strict',str(app)],check=True)
 with tempfile.TemporaryDirectory(prefix='cassette-macos-') as folder:
     root=pathlib.Path(folder)

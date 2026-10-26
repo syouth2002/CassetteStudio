@@ -1,6 +1,11 @@
 name: macOS packages
 on:
   workflow_dispatch:
+    inputs:
+      source_run:
+        description: 'Optional successful run ID to reuse binaries for packaging-only changes'
+        required: false
+        type: string
 permissions:
   contents: read
 jobs:
@@ -22,11 +27,24 @@ jobs:
           python-version: '3.12'
       - name: Toolchain and audio tools
         run: |
-          rustup update stable --no-self-update
-          rustup default stable
+          if [ -z "${{ inputs.source_run }}" ]; then
+            rustup update stable --no-self-update
+            rustup default stable
+          fi
           brew install ffmpeg
+      - uses: actions/download-artifact@v4
+        if: inputs.source_run != ''
+        with:
+          name: macos-${{ matrix.arch }}
+          path: dist/prebuilt
+          run-id: ${{ inputs.source_run }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and package
-        run: sh scripts/package-public-macos.sh 0.1.2
+        run: |
+          if [ -n "${{ inputs.source_run }}" ]; then
+            export CASSETTE_PREBUILT_ARCHIVE="$PWD/dist/prebuilt/CassetteStudio-0.1.2-macOS-${{ matrix.arch }}.zip"
+          fi
+          sh scripts/package-public-macos.sh 0.1.2
       - name: Native app and audio smoke test
         run: python3 scripts/test-macos-package.py dist/releases/v0.1.2/macos-${{ matrix.arch }}
       - uses: actions/upload-artifact@v4

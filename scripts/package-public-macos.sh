@@ -6,11 +6,16 @@ version=${1:-0.1.2}
 case $(uname -m) in arm64) arch=arm64; target=aarch64-apple-darwin;; x86_64) arch=x64; target=x86_64-apple-darwin;; *) exit 1;; esac
 release="$project/dist/releases/v$version"
 stage="$release/macos-$arch"
+app="$stage/Cassette Studio.app"
+if [ -n "${CASSETTE_PREBUILT_ARCHIVE:-}" ]; then
+    test ! -e "$stage"
+    ditto -x -k "$CASSETTE_PREBUILT_ARCHIVE" "$release"
+    test -x "$app/Contents/MacOS/CassetteStudio"
+else
 test ! -e "$stage" || { echo "Stage already exists: $stage" >&2; exit 1; }
 cd "$project"
 cargo build --release --features desktop --bins --locked
 cargo test --locked
-app="$stage/Cassette Studio.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$stage/docs"
 cp target/release/cassette-studio-desktop "$app/Contents/MacOS/CassetteStudio"
 cp target/release/cassette-studio "$stage/cassette-studio-browser"
@@ -26,6 +31,7 @@ for size in 16 32 128 256 512; do
     sips -z "$twice" "$twice" assets/cassette-studio-app.png --out "$iconset/icon_${size}x${size}@2x.png" >/dev/null
 done
 iconutil -c icns "$iconset" -o "$app/Contents/Resources/CassetteStudio.icns"
+fi
 python3 - "$app/Contents/Info.plist" "$version" <<'PY'
 import plistlib,sys
 with open(sys.argv[1],'wb') as output:
@@ -33,7 +39,9 @@ with open(sys.argv[1],'wb') as output:
       'CFBundleIdentifier':'com.syouth2002.CassetteStudio','CFBundleExecutable':'CassetteStudio',
       'CFBundlePackageType':'APPL','CFBundleShortVersionString':sys.argv[2],
       'CFBundleVersion':sys.argv[2],'CFBundleIconFile':'CassetteStudio.icns',
-      'LSMinimumSystemVersion':'15.0','NSHighResolutionCapable':True},output)
+      'LSMinimumSystemVersion':'15.0','NSHighResolutionCapable':True,
+      'NSAppTransportSecurity':{'NSAllowsLocalNetworking':True,
+        'NSExceptionDomains':{'127.0.0.1':{'NSExceptionAllowsInsecureHTTPLoads':True}}}},output)
 PY
 cat > "$stage/SetupAudioTools.command" <<'SH'
 #!/bin/sh
