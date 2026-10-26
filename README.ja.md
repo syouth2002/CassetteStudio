@@ -12,9 +12,9 @@
 
 | 環境 | 配布ファイル | 初回の使い方 |
 | --- | --- | --- |
-| Windows x64 | `CassetteStudio-0.1.0-Windows-x64.zip` | フォルダ全体を展開し、`SetupAudioTools.cmd`でFFmpeg・FFprobe・yt-dlpを取得した後、`CassetteStudio.exe`を起動します。WebView2が必要です。 |
-| Ubuntu 24.04 x64 | `CassetteStudio-0.1.0-Ubuntu24-amd64.deb` | `sudo apt install ./CassetteStudio-0.1.0-Ubuntu24-amd64.deb`で導入し、アプリ一覧から起動します。FFmpegなどは依存パッケージとして導入されます。 |
-| Linux x64展開版 | `CassetteStudio-0.1.0-Linux-Ubuntu24-x64.tar.gz` | 展開後にCassetteStudioを起動します。FFmpeg・GTK 3・WebKitGTK 4.1・libxdo・D-Busを別途導入してください。 |
+| Windows x64 | `CassetteStudio-0.1.1-Windows-x64.zip` | フォルダ全体を展開し、`SetupAudioTools.cmd`でFFmpeg・FFprobe・yt-dlpを取得した後、`CassetteStudio.exe`を起動します。WebView2が必要です。 |
+| Ubuntu 24.04 x64 | `CassetteStudio-0.1.1-Ubuntu24-amd64.deb` | `sudo apt install ./CassetteStudio-0.1.1-Ubuntu24-amd64.deb`で導入し、アプリ一覧から起動します。FFmpegなどは依存パッケージとして導入されます。 |
+| Linux x64展開版 | `CassetteStudio-0.1.1-Linux-Ubuntu24-x64.tar.gz` | 展開後にCassetteStudioを起動します。FFmpeg・GTK 3・WebKitGTK 4.1・libxdo・D-Busを別途導入してください。 |
 
 公開用の配布ファイルには、アプリ本体・日英の説明・画面画像・依存ライブラリのライセンスを含めています。外部音声ツールは同梱せず、別途導入します。Windowsの初回ツール取得にはネット接続が必要です。URL取り込みには[Node.js 22以上](https://nodejs.org/ja/download)、Linuxでは最新の[yt-dlp](https://github.com/yt-dlp/yt-dlp#installation)も用意してください。ローカル音声の取り込みにはNodeやyt-dlpは不要です。通常利用にRustは必要ありません。配布ファイルの検証にはリリースのSHA256SUMS.txtを使用できます。
 
@@ -149,4 +149,14 @@ Shift_JIS/CP932の日本語タグがLatin-1として読み取られ、制御文�
 
 ## 公開用パッケージの作成
 
-Windowsはscripts/package-public-windows.ps1、Linuxはビルド後にscripts/package-public-linux.shを使用します。dist/releases/v0.1.0/へアプリ本体のみの配布ファイルを作ります。依存関係のライセンス収集にPython 3とRustに付属する著作権表示ファイルが必要です。従来のpackage-windows.ps1・package-linux.shは外部ツール同梱のローカル用パッケージを作成する補助スクリプトで、公開リリースには使用しません。
+Windowsはscripts/package-public-windows.ps1、Linuxはビルド後にscripts/package-public-linux.shを使用します。dist/releases/v0.1.1/へアプリ本体のみの配布ファイルを作ります。依存関係のライセンス収集にPython 3とRustに付属する著作権表示ファイルが必要です。従来のpackage-windows.ps1・package-linux.shは外部ツール同梱のローカル用パッケージを作成する補助スクリプトで、公開リリースには使用しません。
+
+## DCオフセットの除去
+
+録音設定の「DCオフセット除去」をONにします。初期値はOFFで、プレイリスト・カセットごとに保存します。「音量・DC解析」は選択曲、未選択なら表示中の全曲を解析します。既存曲も、補正を有効にした再生・書き出し時に必要に応じて解析します。曲を1曲選んで音量調整を開くと、左右別のDC量をフルスケールに対する割合（%）で確認できます。
+
+無音除去後の曲全体で左右別の平均値を求め、音量補正・フェードより前に差し引きます。補正後の音量・トゥルーピークを別に測定して音量統一へ使い、音量統一OFFでもピーク上限を守ります。試聴・デッキ録音用再生・WAV書き出しは共通処理です。B面への引き継ぎも曲全体の同じDC量を使います。元ファイルは変更しません。
+
+DC除去ONで取り込む場合は補正前後で両端の無音を確認します。設定を変えても既存の再生範囲は変えません。無音範囲も更新する場合は既存カセットを削除して音源を再解析してください。この機能は一定の平均ずれを除去するもので、時間変動する低域を除去するフィルターや、デッキの録音バイアス調整ではありません。
+
+`node scripts/test-dc.mjs`で、合成音源による左右別補正、モノラル、無音、曲の両端、試聴/WAV一致、フェード、A/B引き継ぎ、音量統一、ピーク制限、旧データ、保存、元ファイル保持を検証できます。

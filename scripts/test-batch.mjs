@@ -17,10 +17,11 @@ const base='http://127.0.0.1:3212';
 const post=(body)=>fetch(base+'/api/fill-cassettes',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
 try{
  for(let i=0;i<80;i++){try{await fetch(base+'/api/library');break;}catch{await new Promise(r=>setTimeout(r,100));if(i===79)throw Error('Startup timeout');}}
+ const initial=await(await fetch(base+'/api/library')).json();
  const response=await post({tracks:[...tracks.map(t=>t.id),tracks[1].id],targets:[short.id,long.id]});assert.equal(response.status,200);const result=await response.json();
  assert.equal(result.collections.length,2);assert.equal(result.excluded,1);
  const seen=new Set();for(const c of result.collections){assert.ok([50,100].includes(c.settings.side_seconds));for(const id of c.tracks){assert.notEqual(id,tracks[0].id);assert.ok(!seen.has(id));seen.add(id);}for(const es of c.sides){assert.ok(es.reduce((n,e)=>n+e.duration,0)<=c.settings.side_seconds+.001);}}
- const saved=JSON.parse(await readFile(path.join(dir,'library.json'),'utf8'));assert.deepEqual(saved.collections[0],used);assert.deepEqual(saved.collections[3],spare);assert.equal(saved.collections[1].name,short.name);
+ const saved=JSON.parse(await readFile(path.join(dir,'library.json'),'utf8'));assert.deepEqual(saved.collections[0],initial.collections[0]);assert.deepEqual(saved.collections[3],initial.collections[3]);assert.equal(saved.collections[1].name,short.name);
  const before=await readFile(path.join(dir,'library.json'),'utf8');const bad=await post({tracks:tracks.map(t=>t.id),targets:[spare.id,short.id]});assert.equal(bad.status,400);assert.equal(await readFile(path.join(dir,'library.json'),'utf8'),before);
  console.log(`PASS: batch API, saved tape lengths, no reused tracks, persistence, filled-tape protection, atomic failure.\n${dir}`);
  if(process.env.BATCH_KEEP==='1'){console.log(`UI fixture: ${base}/`);await new Promise(()=>{});}

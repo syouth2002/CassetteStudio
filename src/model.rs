@@ -14,11 +14,19 @@ pub struct Track {
     pub manual_gain_db: f64,
     #[serde(default)]
     pub loudness: Option<Loudness>,
+    #[serde(default)]
+    pub dc: Option<DcAnalysis>,
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Loudness {
     pub integrated_lufs: Option<f64>,
     pub true_peak_db: Option<f64>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DcAnalysis {
+    /// Mean sample values after the common stereo downmix, over the trimmed track.
+    pub offset: [f64; 2],
+    pub corrected_loudness: Loudness,
 }
 impl Track {
     pub fn audible(&self) -> f64 {
@@ -40,6 +48,7 @@ pub struct Settings {
     pub silence_db: f64,
     pub silence_min: f64,
     pub normalize: bool,
+    pub remove_dc: bool,
     pub target_lufs: f64,
     pub peak_db: f64,
 }
@@ -56,6 +65,7 @@ impl Default for Settings {
             silence_db: -50.0,
             silence_min: 0.2,
             normalize: false,
+            remove_dc: false,
             target_lufs: -18.0,
             peak_db: -1.0,
         }

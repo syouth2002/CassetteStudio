@@ -236,5 +236,18 @@
   "C80 · 片面40分": "C80 · 40 minutes per side",
   "長さの補正（片面あたり・秒）": "Length correction (seconds per side)",
   "各カセットに保存。＋で延長、−で短縮し、A/B両面に適用します。": "Saved per cassette. Positive extends, negative shortens; applies to both sides.",
-  "長さの補正の値が範囲外です": "Length correction is out of range"
+  "長さの補正の値が範囲外です": "Length correction is out of range",
+  "DCオフセット除去": "Remove DC offset",
+  "OFF（DC補正なし）": "OFF (no DC correction)",
+  "ON（左右別に補正）": "ON (correct each channel)",
+  "波形の中心ずれを補正します。元ファイルは変更しません。": "Centers each channel waveform without modifying source files.",
+  "DC除去": "DC removed",
+  "DC未解析": "DC not analyzed",
+  "DCオフセット：L {0}% / R {1}%": "DC offset: L {0}% / R {1}%",
+  "音量・DC解析": "Analyze loudness / DC",
+  "DC補正後の音量：{0} / ピーク：{1} / 現在の補正：{2}{3}": "After DC removal: {0} / Peak: {1} / Current gain: {2}{3}",
+  "{0}曲の音量・DC解析が完了しました。録音設定で補正をONにできます": "Loudness and DC analysis finished for {0} tracks. Enable correction in Recording settings.",
+  "DCオフセットの解析値が不正です": "Invalid DC offset measurement",
+  "DCオフセットの解析結果を取得できません": "Could not obtain DC offset measurements",
+  "DCオフセット解析が必要です": "DC offset analysis is required"
 }

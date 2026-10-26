@@ -32,7 +32,7 @@ function csSetLanguage(language){
  if(typeof draw==='function')draw();
  if(typeof player!=='undefined'&&player)updatePlayer();
  else document.getElementById('playing-title').textContent=csText('再生する曲を選択');
- for(const id of ['tool-status','busy-label','toast','record-detail','record-start','gain-measurement','batch-source','name-prompt','confirm-message']){
+ for(const id of ['tool-status','busy-label','toast','record-detail','record-start','gain-measurement','gain-dc-measurement','batch-source','name-prompt','confirm-message']){
   const el=document.getElementById(id);if(el)el.textContent=csTranslateMessage(el.textContent);
  }
 }

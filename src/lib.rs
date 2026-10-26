@@ -60,7 +60,7 @@ impl App {
                 .iter()
                 .find(|t| &t.id == id)
                 .ok_or(Error("曲が見つかりません".into()))?;
-            if t.loudness.is_none() {
+            if t.loudness.is_none() || t.dc.is_none() {
                 missing.push(t.clone());
             }
         }
@@ -71,10 +71,7 @@ impl App {
                     missing
                         .into_iter()
                         .map(|mut t| {
-                            t.loudness = Some(audio::measure_loudness(
-                                &root.join("sources").join(&t.id),
-                                &t,
-                            )?);
+                            audio::measure_track(&root.join("sources").join(&t.id), &mut t)?;
                             Ok(t)
                         })
                         .collect::<Result<Vec<_>, String>>()
@@ -91,6 +88,7 @@ impl App {
                         return Err("曲の解析範囲が変更されました。再実行してください".into());
                     }
                     old.loudness = t.loudness;
+                    old.dc = t.dc;
                 }
                 Ok(())
             })?;
@@ -508,6 +506,7 @@ async fn render(State(app): State<App>, Json(body): Json<RenderRequest>) -> Api<
         .map(|e| e.track_id.clone())
         .collect();
     if body.settings.normalize
+        || body.settings.remove_dc
         || lib
             .tracks
             .iter()
@@ -546,6 +545,7 @@ async fn preview(
 ) -> Api<serde_json::Value> {
     s.validate()?;
     if s.normalize
+        || s.remove_dc
         || app
             .snapshot()?
             .tracks

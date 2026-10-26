@@ -38,7 +38,7 @@ cp "$output/README.md" "$output/README.ja.md" "$output/THIRD_PARTY_NOTICES.md" "
 cp -r "$output/CassetteStudio" "$output/cassette-studio-browser" "$output/tools" "$stage/usr/lib/cassette-studio/"
 cat > "$stage/DEBIAN/control" <<'EOF'
 Package: cassette-studio
-Version: 0.1.0
+Version: 0.1.1
 Architecture: amd64
 Maintainer: Cassette Studio
 Depends: libwebkit2gtk-4.1-0, libgtk-3-0t64, libxdo3, libdbus-1-3, ffmpeg, xdg-desktop-portal-gtk

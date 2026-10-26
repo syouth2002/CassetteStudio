@@ -145,12 +145,14 @@ pub fn analyze(
         .and_then(|v| v.parse::<f64>().ok())
         .filter(|v| v.is_finite() && *v > 0.0 && *v <= 86400.0)
         .ok_or("再生時間を取得できないか、24時間を超えるファイルです")?;
-    let filter = format!("silencedetect=noise={}dB:d={}", s.silence_db, s.silence_min);
-    let o = run(command("ffmpeg")
-        .args(["-hide_banner", "-nostdin", "-i"])
-        .arg(path)
-        .args(["-map", "0:a:0", "-af", &filter, "-f", "null", "-"]))?;
-    let (trim_start, trim_end) = silence_bounds(&String::from_utf8_lossy(&o.stderr), duration);
+    let (mut trim_start, mut trim_end) = detect_silence(path, duration, s, None)?;
+    if s.remove_dc {
+        let offset = measure_dc_range(path, trim_start, trim_end)?;
+        let (start, end) = detect_silence(path, duration, s, Some(offset))?;
+        // Preserve genuine digital silence as well as silence hidden by DC.
+        trim_start = trim_start.max(start);
+        trim_end = trim_end.min(end).max(trim_start);
+    }
     let tags = &meta["format"]["tags"];
     let title = tags["title"]
         .as_str()
@@ -174,22 +176,59 @@ pub fn analyze(
         trim_end,
         manual_gain_db: 0.0,
         loudness: None,
+        dc: None,
     };
-    track.loudness = Some(measure_loudness(path, &track)?);
+    measure_track(path, &mut track)?;
     Ok(track)
 }
 
 // Both measurement and playback use the same stereo downmix and sample rate.
 const STEREO: &str = "aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo";
+fn detect_silence(
+    path: &Path,
+    duration: f64,
+    s: &Settings,
+    offset: Option<[f64; 2]>,
+) -> Result<(f64, f64), String> {
+    let prefix = offset
+        .map(dc_filter)
+        .transpose()?
+        .map(|f| format!("{STEREO},{f},"))
+        .unwrap_or_default();
+    let filter = format!(
+        "{prefix}silencedetect=noise={}dB:d={}",
+        s.silence_db, s.silence_min
+    );
+    let o = run(command("ffmpeg")
+        .args(["-hide_banner", "-nostdin", "-i"])
+        .arg(path)
+        .args(["-map", "0:a:0", "-af", &filter, "-f", "null", "-"]))?;
+    Ok(silence_bounds(
+        &String::from_utf8_lossy(&o.stderr),
+        duration,
+    ))
+}
 pub fn measure_loudness(path: &Path, t: &Track) -> Result<Loudness, String> {
+    measure_loudness_with_dc(path, t, None)
+}
+fn measure_loudness_with_dc(
+    path: &Path,
+    t: &Track,
+    offset: Option<[f64; 2]>,
+) -> Result<Loudness, String> {
     if t.audible() <= 0.0 {
         return Ok(Loudness {
             integrated_lufs: None,
             true_peak_db: None,
         });
     }
+    let dc = offset
+        .map(dc_filter)
+        .transpose()?
+        .map(|f| format!(",{f}"))
+        .unwrap_or_default();
     let filter = format!(
-        "{STEREO},atrim=start={}:end={},asetpts=PTS-STARTPTS,loudnorm=I=-18:TP=-1:LRA=50:print_format=json",
+        "{STEREO},atrim=start={}:end={},asetpts=PTS-STARTPTS{dc},loudnorm=I=-18:TP=-1:LRA=50:print_format=json",
         t.trim_start, t.trim_end
     );
     let o = run(command("ffmpeg")
@@ -197,6 +236,67 @@ pub fn measure_loudness(path: &Path, t: &Track) -> Result<Loudness, String> {
         .arg(path)
         .args(["-map", "0:a:0", "-vn", "-af", &filter, "-f", "null", "-"]))?;
     parse_loudness(&String::from_utf8_lossy(&o.stderr))
+}
+pub fn measure_track(path: &Path, t: &mut Track) -> Result<(), String> {
+    if t.loudness.is_none() {
+        t.loudness = Some(measure_loudness(path, t)?);
+    }
+    if t.dc.is_none() {
+        let offset = measure_dc_range(path, t.trim_start, t.trim_end)?;
+        let corrected_loudness = measure_loudness_with_dc(path, t, Some(offset))?;
+        t.dc = Some(DcAnalysis {
+            offset,
+            corrected_loudness,
+        });
+    }
+    Ok(())
+}
+fn measure_dc_range(path: &Path, start: f64, end: f64) -> Result<[f64; 2], String> {
+    if end <= start {
+        return Ok([0.0; 2]);
+    }
+    let filter = format!(
+        "{STEREO},atrim=start={start}:end={end},astats=metadata=0:reset=0:measure_perchannel=DC_offset:measure_overall=none"
+    );
+    let o = run(command("ffmpeg")
+        .args(["-hide_banner", "-nostats", "-nostdin", "-i"])
+        .arg(path)
+        .args(["-map", "0:a:0", "-vn", "-af", &filter, "-f", "null", "-"]))?;
+    parse_dc(&String::from_utf8_lossy(&o.stderr))
+}
+fn parse_dc(log: &str) -> Result<[f64; 2], String> {
+    let values: Vec<f64> = log
+        .lines()
+        .filter_map(|line| line.split_once("DC offset: ").map(|(_, v)| v.trim()))
+        .map(|v| {
+            v.parse::<f64>()
+                .map_err(|_| "DCオフセットの解析値が不正です".to_string())
+        })
+        .collect::<Result<_, _>>()?;
+    if values.len() != 2 || values.iter().any(|v| !v.is_finite()) {
+        return Err("DCオフセットの解析結果を取得できません".into());
+    }
+    Ok([values[0], values[1]])
+}
+fn dc_filter(offset: [f64; 2]) -> Result<String, String> {
+    if offset.iter().any(|v| !v.is_finite()) {
+        return Err("DCオフセットの解析値が不正です".into());
+    }
+    Ok(format!(
+        "aeval=exprs='val(0)-({})|val(1)-({})':channel_layout=stereo",
+        offset[0], offset[1]
+    ))
+}
+fn processing_filter(t: &Track, s: &Settings) -> Result<String, String> {
+    let dc = if s.remove_dc {
+        format!(
+            ",{}",
+            dc_filter(t.dc.as_ref().ok_or("DCオフセット解析が必要です")?.offset)?
+        )
+    } else {
+        String::new()
+    };
+    Ok(format!("{STEREO}{dc},volume={}dB", gain(t, s)?.gain_db))
 }
 fn parse_loudness(log: &str) -> Result<Loudness, String> {
     let start = log.rfind('{').ok_or("音量の解析結果を取得できません")?;
@@ -225,14 +325,21 @@ pub fn gain(t: &Track, s: &Settings) -> Result<GainReport, String> {
     if !t.manual_gain_db.is_finite() || !(-24.0..=24.0).contains(&t.manual_gain_db) {
         return Err("手動補正は−24〜＋24 dBで指定してください".into());
     }
-    if !s.normalize && t.manual_gain_db == 0.0 {
+    if !s.normalize && t.manual_gain_db == 0.0 && !s.remove_dc {
         return Ok(GainReport {
             gain_db: 0.0,
             limited: false,
             predicted_lufs: t.loudness.as_ref().and_then(|l| l.integrated_lufs),
         });
     }
-    let stats = t.loudness.as_ref().ok_or("音量解析が必要です")?;
+    let stats = if s.remove_dc {
+        &t.dc
+            .as_ref()
+            .ok_or("DCオフセット解析が必要です")?
+            .corrected_loudness
+    } else {
+        t.loudness.as_ref().ok_or("音量解析が必要です")?
+    };
     let requested = if s.normalize {
         stats.integrated_lufs.map_or(0.0, |i| s.target_lufs - i)
     } else {
@@ -262,6 +369,19 @@ pub fn preview_name(t: &Track, s: &Settings) -> String {
         t.trim_end.to_bits(),
     )
         .hash(&mut hash);
+    s.remove_dc.hash(&mut hash);
+    if s.remove_dc {
+        t.dc.as_ref()
+            .map(|d| {
+                (
+                    d.offset[0].to_bits(),
+                    d.offset[1].to_bits(),
+                    d.corrected_loudness.integrated_lufs.map(f64::to_bits),
+                    d.corrected_loudness.true_peak_db.map(f64::to_bits),
+                )
+            })
+            .hash(&mut hash);
+    }
     format!("{}-{:016x}.wav", t.id, hash.finish())
 }
 
@@ -339,10 +459,9 @@ pub fn render(
                 .find(|t| t.id == e.track_id)
                 .ok_or("曲が見つかりません")?;
             let frames = (e.duration * RATE as f64).round() as u64;
-            let correction = gain(t, s)?;
             let mut filter = format!(
-                "{STEREO},volume={}dB,atrim=start={}:duration={},asetpts=PTS-STARTPTS",
-                correction.gain_db,
+                "{},atrim=start={}:duration={},asetpts=PTS-STARTPTS",
+                processing_filter(t, s)?,
                 t.trim_start + e.offset,
                 e.duration
             );
@@ -437,7 +556,7 @@ pub fn preview(root: &Path, t: &Track, s: &Settings) -> Result<(), String> {
         return Ok(());
     }
     let temp = dest.with_extension(format!("{}.tmp.wav", uuid::Uuid::new_v4()));
-    let filter = format!("{STEREO},volume={}dB", gain(t, s)?.gain_db);
+    let filter = processing_filter(t, s)?;
     let r = run(command("ffmpeg")
         .args(["-v", "error", "-nostdin", "-y", "-i"])
         .arg(root.join("sources").join(&t.id))
@@ -560,6 +679,7 @@ mod tests {
             trim_start: 0.0,
             trim_end: 10.0,
             manual_gain_db: 0.0,
+            dc: None,
             loudness: Some(Loudness {
                 integrated_lufs: Some(-24.0),
                 true_peak_db: Some(-12.0),
@@ -635,6 +755,70 @@ mod tests {
         );
         t.manual_gain_db = 1.0;
         assert_ne!(raw, preview_name(&t, &s));
+    }
+    #[test]
+    fn dc_parsing_gain_and_cache_are_independent_of_raw_measurements() {
+        assert_eq!(
+            parse_dc("DC offset: 0.12\nDC offset: -0.07").unwrap(),
+            [0.12, -0.07]
+        );
+        for invalid in [
+            "",
+            "DC offset: 0.1",
+            "DC offset: NaN\nDC offset: 0",
+            "DC offset: 0\nDC offset: 0\nDC offset: 0",
+        ] {
+            assert!(parse_dc(invalid).is_err());
+        }
+        let mut t = test_track();
+        let s = Settings {
+            normalize: true,
+            remove_dc: true,
+            ..Settings::default()
+        };
+        assert!(gain(&t, &s).is_err());
+        t.dc = Some(DcAnalysis {
+            offset: [0.12, -0.07],
+            corrected_loudness: Loudness {
+                integrated_lufs: Some(-30.0),
+                true_peak_db: Some(-20.0),
+            },
+        });
+        assert_eq!(gain(&t, &s).unwrap().gain_db, 12.0);
+        assert_eq!(
+            gain(
+                &t,
+                &Settings {
+                    remove_dc: false,
+                    ..s.clone()
+                }
+            )
+            .unwrap()
+            .gain_db,
+            6.0
+        );
+        let corrected = preview_name(&t, &s);
+        assert_ne!(
+            corrected,
+            preview_name(
+                &t,
+                &Settings {
+                    remove_dc: false,
+                    ..s.clone()
+                }
+            )
+        );
+        t.dc.as_mut().unwrap().offset[0] = 0.2;
+        assert_ne!(corrected, preview_name(&t, &s));
+        assert!(!serde_json::from_str::<Settings>("{}").unwrap().remove_dc);
+        let mut legacy = serde_json::to_value(&t).unwrap();
+        legacy.as_object_mut().unwrap().remove("dc");
+        assert!(
+            serde_json::from_value::<Track>(legacy)
+                .unwrap()
+                .dc
+                .is_none()
+        );
     }
     #[test]
     fn only_boundary_silence_is_trimmed() {

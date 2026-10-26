@@ -1,7 +1,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const defaults={side_seconds:1800,length_correction:0,gap:2,fill_threshold:30,fade:5,continuation:'restart',rewind:3,silence_db:-50,silence_min:.2,normalize:false,target_lufs:-18,peak_db:-1};
+const defaults={side_seconds:1800,length_correction:0,gap:2,fill_threshold:30,fade:5,continuation:'restart',rewind:3,silence_db:-50,silence_min:.2,normalize:false,remove_dc:false,target_lufs:-18,peak_db:-1};
 let gainTrackId=null;
 const downloadCaches=new Map();
 let lib={tracks:[],collections:[]}, active='all',side=0, selected=new Set();
@@ -16,8 +16,8 @@ const current=()=>lib.collections.find(c=>c.id===active);
 const config=()=>({...defaults,...(current()?.settings||settings)});
 const db=n=>`${n>=0?'+':''}${n.toFixed(1)} dB`;
 function gainInfo(t,s=config()){
- const l=t.loudness,m=t.manual_gain_db||0;
- if(!s.normalize&&!m)return {text:csText("補正なし"),gain:0,limited:false};
+ const l=s.remove_dc?t.dc?.corrected_loudness:t.loudness,m=t.manual_gain_db||0;
+ if(!s.normalize&&!m&&!s.remove_dc)return {text:csText("補正なし"),gain:0,limited:false};
  if(!l)return {text:csText("音量未解析"),gain:0,limited:false};
  const requested=(s.normalize&&l.integrated_lufs!=null?s.target_lufs-l.integrated_lufs:0)+m;
  const gain=Math.min(requested,l.true_peak_db==null?Infinity:s.peak_db-.1-l.true_peak_db);
@@ -25,7 +25,7 @@ function gainInfo(t,s=config()){
  return {text:`${db(gain)}${limited?csText(" · ピーク制限"):''}`,gain,limited};
 }
 function mergeTracks(tracks){for(const t of tracks){const i=lib.tracks.findIndex(v=>v.id===t.id);if(i>=0)lib.tracks[i]=t;}}
-function mergeMeasurements(tracks){for(const t of tracks){const old=track(t.id);if(old)old.loudness=t.loudness;}}
+function mergeMeasurements(tracks){for(const t of tracks){const old=track(t.id);if(old){old.loudness=t.loudness;old.dc=t.dc;}}}
 const isTape=()=>current()?.kind==='cassette';
 const total=(entries,s=config())=>entries.reduce((n,e)=>n+e.duration,0)+Math.max(0,entries.length-1)*s.gap;
 function entries(){const c=current();return !c?lib.tracks.map(t=>whole(t.id)):c.kind==='playlist'?c.tracks.map(whole):c.sides[side];}
@@ -79,7 +79,8 @@ function draw(){
   if(duration(t)<=0)badges.push(csText("<span class=\"badge warning\">全体が無音</span>"));
   else if(t.duration-duration(t)>.05)badges.push(csText("<span class=\"badge\">無音除去</span>"));
   const correction=gainInfo(t);
-  if(config().normalize||t.manual_gain_db)badges.push(`<span class="badge ${correction.limited?'warning':'gain-badge'}" title="${esc(t.loudness?.integrated_lufs!=null?csText("元の音量 {0} LUFS", t.loudness.integrated_lufs.toFixed(1)):csText("未解析"))}">${esc(correction.text)}</span>`);
+  if(config().remove_dc)badges.push(`<span class="badge" title="${esc(t.dc?csText("DCオフセット：L {0}% / R {1}%",(t.dc.offset[0]*100).toFixed(4),(t.dc.offset[1]*100).toFixed(4)):csText("未解析"))}">${csText(t.dc?"DC除去":"DC未解析")}</span>`);
+  if(config().normalize||config().remove_dc||t.manual_gain_db)badges.push(`<span class="badge ${correction.limited?'warning':'gain-badge'}" title="${esc(t.loudness?.integrated_lufs!=null?csText("元の音量 {0} LUFS", t.loudness.integrated_lufs.toFixed(1)):csText("未解析"))}">${esc(correction.text)}</span>`);
   return csText("<tr data-index=\"{0}\" draggable=\"{1}\" class=\"{2}\"><td><input type=\"checkbox\" aria-label=\"{3}を選択\" data-index=\"{4}\" {5}></td><td>{6}{7}</td><td class=\"title-cell\"><span class=\"song-title\">{8}</span><small>{9}</small></td><td>{10}</td><td>{11}</td><td>{12}</td></tr>", i, active!=='all', selected.has(i)?'selected':'', esc(t.title), i, selected.has(i)?'checked':'', active==='all'?'':'<span class="handle">⋮⋮</span>', String(i+1).padStart(2,'0'), esc(t.title), esc(t.artist||t.filename), time(e.duration), time(t.duration), badges.join(''));
  }).join('');
  $('empty-state').hidden=list.length>0;
@@ -133,18 +134,18 @@ async function attachTracks(ids,destination=active){const c=lib.collections.find
  renderCache=null;await persist(c);
 }
 const settingFields=[['gap','gap'],['fill-threshold','fill_threshold'],['fade','fade'],['continuation','continuation'],['rewind','rewind'],['silence-db','silence_db'],['silence-min','silence_min'],['target-lufs','target_lufs'],['peak-db','peak_db']];
-function fillSettings(){const s=config();const nominal=s.side_seconds-(s.length_correction||0);$('side-minutes').value=nominal/60;$('length-correction').value=s.length_correction||0;const preset=[46,60,74,80,90,120].find(n=>Math.abs(n*30-nominal)<.001);$('tape-preset').value=preset||'custom';$('normalize').value=String(s.normalize);for(const [id,key]of settingFields)$(id).value=['gap','fade','rewind'].includes(key)?Math.max(key==='fade'?.5:0,Math.round(s[key]*2)/2):s[key];}
-function readSettings(){const s={side_seconds:+$('side-minutes').value*60+(+$('length-correction').value),length_correction:+$('length-correction').value,normalize:$('normalize').value==='true'};for(const [id,key]of settingFields)s[key]=key==='continuation'?$(id).value:+$(id).value;return s;}
+function fillSettings(){const s=config();const nominal=s.side_seconds-(s.length_correction||0);$('side-minutes').value=nominal/60;$('length-correction').value=s.length_correction||0;const preset=[46,60,74,80,90,120].find(n=>Math.abs(n*30-nominal)<.001);$('tape-preset').value=preset||'custom';$('normalize').value=String(s.normalize);$('remove-dc').value=String(s.remove_dc||false);for(const [id,key]of settingFields)$(id).value=['gap','fade','rewind'].includes(key)?Math.max(key==='fade'?.5:0,Math.round(s[key]*2)/2):s[key];}
+function readSettings(){const s={side_seconds:+$('side-minutes').value*60+(+$('length-correction').value),length_correction:+$('length-correction').value,normalize:$('normalize').value==='true',remove_dc:$('remove-dc').value==='true'};for(const [id,key]of settingFields)s[key]=key==='continuation'?$(id).value:+$(id).value;return s;}
 function saveSettings(){stop();settings=readSettings();localStorage.setItem('cs-settings',JSON.stringify(settings));if(current()){current().settings=structuredClone(settings);changed();}renderCache=null;draw();}
 async function rendered(){
  const c=current();if(!c||c.kind!=='cassette')throw Error(csText("カセットを選択してください"));
  if(c.sides.some(es=>total(es)>config().side_seconds+.001))throw Error(csText("面の長さを超えています。曲を移動・削除してください"));
  const sides=structuredClone(c.sides),s=structuredClone(c.settings),id=c.id,name=c.name;
- const key=JSON.stringify([id,name,sides,s,lib.tracks.map(t=>[t.id,t.manual_gain_db||0])]);if(renderCache?.key===key)return renderCache;
- const data=await api('/api/render',{sides,settings:s});mergeMeasurements(data.tracks||[]);draw();renderCache={key,urls:data.urls,sides,settings:s,collection:id,name};return renderCache;
+ const key=JSON.stringify([id,name,sides,s,lib.tracks.map(t=>[t.id,t.manual_gain_db||0,t.dc||null])]);if(renderCache?.key===key)return renderCache;
+ const data=await api('/api/render',{sides,settings:s});mergeMeasurements(data.tracks||[]);draw();renderCache={key:JSON.stringify([id,name,sides,s,lib.tracks.map(t=>[t.id,t.manual_gain_db||0,t.dc||null])]),urls:data.urls,sides,settings:s,collection:id,name};return renderCache;
 }
 function showDownloads(cache){downloadCaches.set(cache.collection,cache);syncDownloads();}
-function syncDownloads(){const c=current(),cache=c?.kind==='cassette'?downloadCaches.get(c.id):null;const key=c?JSON.stringify([c.id,c.name,c.sides,c.settings,lib.tracks.map(t=>[t.id,t.manual_gain_db||0])]):null;if(!cache||cache.key!==key){$('downloads').replaceChildren();return;}$('downloads').innerHTML=cache.urls.map((u,i)=>csText("<a href=\"{0}\" download=\"{1}-{2}.wav\">↓ SIDE {3} · WAVを保存</a>", esc(u), esc(cache.name), i?'B':'A', i?'B':'A')).join('');}
+function syncDownloads(){const c=current(),cache=c?.kind==='cassette'?downloadCaches.get(c.id):null;const key=c?JSON.stringify([c.id,c.name,c.sides,c.settings,lib.tracks.map(t=>[t.id,t.manual_gain_db||0,t.dc||null])]):null;if(!cache||cache.key!==key){$('downloads').replaceChildren();return;}$('downloads').innerHTML=cache.urls.map((u,i)=>csText("<a href=\"{0}\" download=\"{1}-{2}.wav\">↓ SIDE {3} · WAVを保存</a>", esc(u), esc(cache.name), i?'B':'A', i?'B':'A')).join('');}
 function stop(){playGeneration++;clearTimeout(gapTimer);clearInterval(countdown);gapTimer=null;countdown=null;audio.pause();if(audio.src)audio.currentTime=player?.mode==='playlist'?player.list[player.index].offset+track(player.list[player.index].track_id).trim_start:0;player=null;$('play-btn').textContent='▶';$('playing-title').textContent=csText("再生する曲を選択");$('playing-detail').textContent='Cassette Studio';$('seek').value=0;$('elapsed').textContent='0:00';$('remaining').textContent='−0:00';markPlaying();}
 function markPlaying(){document.querySelectorAll('#tracks tr').forEach(row=>row.classList.toggle('playing',!!player&&active===player.collection&&(!isTape()||side===player.side)&&+row.dataset.index===(player.rows?.[player.index]??player.index)));}
 function tapeIndex(position,p){let elapsed=0;for(let i=0;i<p.list.length;i++){elapsed+=p.list[i].duration;if(position<elapsed+p.gap||i===p.list.length-1)return i;elapsed+=p.gap;}return 0;}
@@ -189,15 +190,16 @@ $('make-manual').onclick=()=>makeTape(false);$('make-auto').onclick=()=>makeTape
 $('analyze-volume').onclick=()=>task(csText("曲全体の音量とピークを解析しています…"),async()=>{
  const es=entries(),ids=[...new Set((selected.size?[...selected].map(i=>es[i]):es).map(e=>e.track_id))];
  if(!ids.length){toast(csText("音源を追加してください"));return;}
- const data=await api('/api/loudness',{tracks:ids,settings:config()});mergeTracks(data.tracks);draw();toast(csText("{0}曲の音量解析が完了しました。録音設定で音量統一をONにできます", ids.length));
+ const data=await api('/api/loudness',{tracks:ids,settings:config()});mergeTracks(data.tracks);draw();toast(csText("{0}曲の音量・DC解析が完了しました。録音設定で補正をONにできます", ids.length));
 });
 $('adjust-volume').onclick=()=>task(csText("曲の音量を確認しています…"),async()=>{
  if(selected.size!==1)return;
  gainTrackId=entries()[[...selected][0]].track_id;
  const data=await api('/api/loudness',{tracks:[gainTrackId],settings:config()});mergeTracks(data.tracks);
- const t=track(gainTrackId),l=t.loudness,report=data.reports[gainTrackId];
+ const t=track(gainTrackId),l=config().remove_dc?t.dc?.corrected_loudness:t.loudness,report=data.reports[gainTrackId];
  $('gain-title').textContent=t.title;$('manual-gain').value=t.manual_gain_db||0;
- $('gain-measurement').textContent=csText("元の音量：{0} / ピーク：{1} / 現在の補正：{2}{3}", l?.integrated_lufs!=null?`${l.integrated_lufs.toFixed(1)} LUFS`:csText("測定対象外"), l?.true_peak_db!=null?`${l.true_peak_db.toFixed(1)} dBTP`:csText("測定対象外"), db(report.gain_db), report.limited?csText("（ピーク制限）"):'');
+ $('gain-measurement').textContent=csText(config().remove_dc?"DC補正後の音量：{0} / ピーク：{1} / 現在の補正：{2}{3}":"元の音量：{0} / ピーク：{1} / 現在の補正：{2}{3}", l?.integrated_lufs!=null?`${l.integrated_lufs.toFixed(1)} LUFS`:csText("測定対象外"), l?.true_peak_db!=null?`${l.true_peak_db.toFixed(1)} dBTP`:csText("測定対象外"), db(report.gain_db), report.limited?csText("（ピーク制限）"):'');
+ $('gain-dc-measurement').textContent=t.dc?csText('DCオフセット：L {0}% / R {1}%',(t.dc.offset[0]*100).toFixed(4),(t.dc.offset[1]*100).toFixed(4)):csText('DC未解析');
  draw();$('gain-dialog').showModal();
 });
 $('gain-form').onsubmit=async e=>{e.preventDefault();const id=gainTrackId,value=+$('manual-gain').value;$('gain-dialog').close();await task(csText("音量補正を保存しています…"),async()=>{

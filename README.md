@@ -14,9 +14,9 @@ Get the application from [GitHub Releases](https://github.com/syouth2002/Cassett
 
 | Platform | Download | First use |
 | --- | --- | --- |
-| Windows x64 | `CassetteStudio-0.1.0-Windows-x64.zip` | Extract the entire folder, run `SetupAudioTools.cmd` once to obtain FFmpeg/FFprobe and yt-dlp, then run `CassetteStudio.exe`. WebView2 must be installed. |
-| Ubuntu 24.04 x64 | `CassetteStudio-0.1.0-Ubuntu24-amd64.deb` | Run `sudo apt install ./CassetteStudio-0.1.0-Ubuntu24-amd64.deb`, then start Cassette Studio from the app menu. FFmpeg and system runtimes are installed as dependencies. |
-| Linux x64 archive | `CassetteStudio-0.1.0-Linux-Ubuntu24-x64.tar.gz` | Extract and launch `CassetteStudio`. Install FFmpeg, GTK 3, WebKitGTK 4.1, libxdo and D-Bus first. |
+| Windows x64 | `CassetteStudio-0.1.1-Windows-x64.zip` | Extract the entire folder, run `SetupAudioTools.cmd` once to obtain FFmpeg/FFprobe and yt-dlp, then run `CassetteStudio.exe`. WebView2 must be installed. |
+| Ubuntu 24.04 x64 | `CassetteStudio-0.1.1-Ubuntu24-amd64.deb` | Run `sudo apt install ./CassetteStudio-0.1.1-Ubuntu24-amd64.deb`, then start Cassette Studio from the app menu. FFmpeg and system runtimes are installed as dependencies. |
+| Linux x64 archive | `CassetteStudio-0.1.1-Linux-Ubuntu24-x64.tar.gz` | Extract and launch `CassetteStudio`. Install FFmpeg, GTK 3, WebKitGTK 4.1, libxdo and D-Bus first. |
 
 Release downloads contain the app, bilingual instructions, screenshots and dependency notices. External audio tools are installed separately; they are not bundled in the public release. Windows first-time audio-tool setup needs internet access. For URL imports, install [Node.js 22+](https://nodejs.org/en/download); Linux also needs a current [yt-dlp](https://github.com/yt-dlp/yt-dlp#installation). Local audio imports do not need Node or yt-dlp. Rust is not needed to use these downloads. Check archive integrity against the release's `SHA256SUMS.txt`.
 
@@ -133,6 +133,14 @@ WebView preferences use the same root. Distribution files and this repository ex
 
 Tool discovery checks overrides, `tools/` beside the executable, the executable directory, development `tools/`, and PATH.
 
+## DC offset removal
+
+In Recording settings, enable **Remove DC offset** (initially OFF). The option is saved per playlist/cassette. **Analyze loudness / DC** analyzes selected tracks, or the displayed list when none are selected; older tracks are analyzed automatically when correction is needed for playback or export. The track loudness dialog shows separate left/right offsets as a percentage of full scale.
+
+The arithmetic mean of each channel over the trimmed track is subtracted before gain and fades. Corrected loudness/true peak are measured separately from the original and used for normalization and peak protection. Preview, deck playback and WAV export share the same processing. A track continued onto B retains the whole track's offset, rather than measuring each fragment. Source files are unchanged. The peak ceiling is enforced when DC correction is on, even with normalization off.
+
+When importing with DC removal enabled, boundary silence is checked both before and after correction. Changing the setting does not alter existing track ranges: reanalyze sources if boundary trimming also needs updating. Existing cassettes must be removed before the silence reanalysis operation. Correction removes a constant mean offset; it is not a time-varying low-cut filter and does not control a deck's recording bias.
+
 ## Legacy Japanese tags
 
 Some files contain Shift_JIS/CP932 bytes tagged as Latin-1. When metadata contains diagnostic control characters and decodes cleanly to Japanese, titles and artists are repaired. Correct Unicode and Western text are preserved. Existing libraries are checked at startup, with the original saved as `library-before-tag-repair.json` before correction. Audio files are unchanged.
@@ -157,6 +165,7 @@ With FFmpeg available in `tools/` or set using `CASSETTE_FFMPEG`, build the CLI 
 node scripts/smoke-test.mjs
 node scripts/test-batch.mjs
 node scripts/test-loudness.mjs
+node scripts/test-dc.mjs
 ```
 
 Tests generate synthetic media under `work/` and use isolated libraries. Coverage includes silence trimming, continuation, fades, WAV length, loudness/peak protection, batch arrangement, persistence, HTTP Range and overflow rejection.
@@ -167,4 +176,4 @@ Tests generate synthetic media under `work/` and use isolated libraries. Coverag
 
 ## Building public release packages
 
-Use `scripts/package-public-windows.ps1` on Windows and `scripts/package-public-linux.sh` after building the Linux binaries. These create application-only packages under `dist/releases/v0.1.0/`. Python 3 is required to collect exact dependency notices; keep the copyright files supplied with the Rust toolchain available. The separate `package-windows.ps1` and `package-linux.sh` helpers create local bundles with external tools and are not used for the public release.
+Use `scripts/package-public-windows.ps1` on Windows and `scripts/package-public-linux.sh` after building the Linux binaries. These create application-only packages under `dist/releases/v0.1.1/`. Python 3 is required to collect exact dependency notices; keep the copyright files supplied with the Rust toolchain available. The separate `package-windows.ps1` and `package-linux.sh` helpers create local bundles with external tools and are not used for the public release.

@@ -23,7 +23,8 @@ body=(f'--{boundary}\r\nContent-Disposition: form-data; name="files"; filename="
 request=urllib.request.Request(base+'/api/import',data=body,headers={'Content-Type':f'multipart/form-data; boundary={boundary}'})
 result=json.load(urllib.request.urlopen(request,timeout=90));assert not result['errors'],result
 t=result['tracks'][0];assert t['loudness']['integrated_lufs']<0
-s={'side_seconds':10,'gap':0,'normalize':True,'target_lufs':-18,'peak_db':-1}
+assert t['dc']['corrected_loudness']
+s={'side_seconds':10,'gap':0,'normalize':True,'remove_dc':True,'target_lufs':-18,'peak_db':-1}
 entry={'track_id':t['id'],'offset':0,'duration':t['trim_end']-t['trim_start'],'fade_in':0,'fade_out':0,'continuation':False}
 rendered=post('/api/render',{'sides':[[entry],[]],'settings':s})
 audio=get(rendered['urls'][0]).read();assert audio[:4]==b'RIFF';assert len(audio)==44+44100*4*10

@@ -268,6 +268,7 @@ mod tests {
             trim_end: len + 4.0,
             manual_gain_db: 0.0,
             loudness: None,
+            dc: None,
         }
     }
     #[test]
