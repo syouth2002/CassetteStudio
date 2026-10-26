@@ -8,6 +8,7 @@ on:
         type: string
 permissions:
   contents: read
+  actions: read
 jobs:
   build:
     strategy:
@@ -20,6 +21,8 @@ jobs:
             arch: x64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
+    env:
+      SOURCE_RUN: ${{ inputs.source_run }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -27,7 +30,7 @@ jobs:
           python-version: '3.12'
       - name: Toolchain and audio tools
         run: |
-          if [ -z "${{ inputs.source_run }}" ]; then
+          if [ -z "$SOURCE_RUN" ]; then
             rustup update stable --no-self-update
             rustup default stable
           fi
@@ -41,7 +44,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and package
         run: |
-          if [ -n "${{ inputs.source_run }}" ]; then
+          if [ -n "$SOURCE_RUN" ]; then
             export CASSETTE_PREBUILT_ARCHIVE="$PWD/dist/prebuilt/CassetteStudio-0.1.2-macOS-${{ matrix.arch }}.zip"
           fi
           sh scripts/package-public-macos.sh 0.1.2
