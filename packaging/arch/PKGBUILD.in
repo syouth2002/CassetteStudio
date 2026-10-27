@@ -1,0 +1,47 @@
+# Generated PKGBUILD downloads a checksummed source snapshot from this release.
+pkgname=cassette-studio
+pkgver=0.1.2
+pkgrel=1
+pkgdesc='Cassette mixtape editor and recording preparation'
+arch=('x86_64')
+url='https://github.com/syouth2002/CassetteStudio'
+license=('MIT')
+depends=('gtk3' 'webkit2gtk-4.1' 'xdotool' 'dbus' 'ffmpeg' 'xdg-desktop-portal')
+makedepends=('rust' 'pkgconf' 'python')
+optdepends=('yt-dlp: URL imports' 'nodejs: JavaScript runtime for URL imports'
+            'xdg-desktop-portal-gtk: file dialogs on GTK desktops')
+options=('!lto' '!debug')
+source=("https://github.com/syouth2002/CassetteStudio/releases/download/v$pkgver/CassetteStudio-$pkgver-Arch-source.tar.gz")
+sha256sums=('@SOURCE_SHA256@')
+
+prepare() {
+    cd "$srcdir/$pkgname-$pkgver"
+    export CARGO_HOME="$srcdir/cargo-home"
+    cargo fetch --locked
+}
+
+build() {
+    cd "$srcdir/$pkgname-$pkgver"
+    export CARGO_HOME="$srcdir/cargo-home"
+    cargo build --release --features desktop --bins --frozen
+    python scripts/collect-licenses.py --target x86_64-unknown-linux-gnu --output arch-licenses
+}
+
+check() {
+    cd "$srcdir/$pkgname-$pkgver"
+    export CARGO_HOME="$srcdir/cargo-home"
+    cargo test --frozen
+}
+
+package() {
+    cd "$srcdir/$pkgname-$pkgver"
+    install -Dm755 target/release/cassette-studio-desktop "$pkgdir/usr/bin/cassette-studio"
+    install -Dm755 target/release/cassette-studio "$pkgdir/usr/bin/cassette-studio-browser"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    install -Dm644 assets/cassette-studio-app.png "$pkgdir/usr/share/icons/hicolor/512x512/apps/cassette-studio.png"
+    install -Dm644 packaging/arch/cassette-studio.desktop "$pkgdir/usr/share/applications/cassette-studio.desktop"
+    install -d "$pkgdir/usr/share/doc/$pkgname"
+    cp README.md README.ja.md THIRD_PARTY_NOTICES.md "$pkgdir/usr/share/doc/$pkgname/"
+    cp -r docs "$pkgdir/usr/share/doc/$pkgname/"
+    cp -r arch-licenses "$pkgdir/usr/share/doc/$pkgname/licenses"
+}

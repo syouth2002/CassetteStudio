@@ -1,0 +1,42 @@
+name: Arch Linux package
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    timeout-minutes: 45
+    steps:
+      - name: Install build and test dependencies
+        run: |
+          pacman -Syu --noconfirm --needed git rust pkgconf python gtk3 webkit2gtk-4.1 xdotool dbus ffmpeg xdg-desktop-portal-gtk xorg-server-xvfb xorg-xauth nodejs
+          useradd -m builder
+      - uses: actions/checkout@v4
+      - name: Prepare checksummed source snapshot
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          python scripts/prepare-arch-package.py
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+      - name: Build native Arch package
+        run: |
+          cd dist/arch
+          su builder -c "cd '$PWD' && makepkg --noconfirm"
+      - name: Install package and verify contents
+        run: |
+          pacman -U --noconfirm dist/arch/cassette-studio-0.1.2-1-x86_64.pkg.tar.zst
+          pacman -Qkk cassette-studio
+          test -f /usr/share/doc/cassette-studio/docs/screenshots/options-ja.jpg
+          test -f /usr/share/doc/cassette-studio/licenses/rust-standard-library/COPYRIGHT-library.html
+          ldd /usr/bin/cassette-studio
+      - name: Native app and audio smoke test
+        run: su builder -c "cd '$GITHUB_WORKSPACE' && dbus-run-session -- xvfb-run -a python scripts/test-arch-package.py"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arch-x86_64
+          path: |
+            dist/arch/cassette-studio-0.1.2-1-x86_64.pkg.tar.zst
+            dist/arch/CassetteStudio-0.1.2-Arch-source.tar.gz
+            dist/arch/PKGBUILD
+          if-no-files-found: error

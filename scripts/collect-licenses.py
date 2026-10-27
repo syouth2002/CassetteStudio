@@ -53,6 +53,13 @@ rustdocs=sysroot/'share/doc/rust';rust=output/'rust-standard-library';rust.mkdir
 for name in ['COPYRIGHT-library.html','COPYRIGHT.html']:
     if (rustdocs/name).is_file():shutil.copyfile(rustdocs/name,rust/name)
 if (rustdocs/'licenses').is_dir():shutil.copytree(rustdocs/'licenses',rust/'licenses',dirs_exist_ok=True)
+if not (rust/'COPYRIGHT-library.html').exists() and sysroot==pathlib.Path('/usr'):
+    # Arch's rust package keeps notices separately from rustup's doc layout.
+    for name in ['COPYRIGHT-library.html','COPYRIGHT.html']:
+        notice=pathlib.Path('/usr/share/licenses/rust')/(name+'.rustc')
+        if notice.is_file():shutil.copyfile(notice,rust/name)
+    license_dir=pathlib.Path('/usr/share/doc/rustc/licenses')
+    if license_dir.is_dir():shutil.copytree(license_dir,rust/'licenses',dirs_exist_ok=True)
 if not (rust/'COPYRIGHT-library.html').exists():raise RuntimeError('Missing Rust standard library copyright notices')
 (output/'dependencies.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 (output/'README.txt').write_text('Third-party notices for the bundled Rust application.\nExact crate versions and license expressions: dependencies.json\nMPL-licensed crate source is included in the corresponding source/ folder.\nExternal audio tools and OS runtimes are not bundled.\n\nRustアプリ本体に含まれる依存関係のライセンスです。\nバージョンとライセンスはdependencies.jsonを参照してください。\nMPL対象のクレートにはsource/を同梱しています。音声ツールやOSランタイムは別途導入します。\n',encoding='utf-8')

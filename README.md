@@ -19,6 +19,7 @@ Get the application from [GitHub Releases](https://github.com/syouth2002/Cassett
 | Windows x64 | `CassetteStudio-0.1.2-Windows-x64.zip` | Extract the entire folder, run `SetupAudioTools.cmd` once to obtain FFmpeg/FFprobe and yt-dlp, then run `CassetteStudio.exe`. WebView2 must be installed. |
 | Ubuntu 24.04 x64 | `CassetteStudio-0.1.2-Ubuntu24-amd64.deb` | Run `sudo apt install ./CassetteStudio-0.1.2-Ubuntu24-amd64.deb`, then start Cassette Studio from the app menu. FFmpeg and system runtimes are installed as dependencies. |
 | Linux x64 archive | `CassetteStudio-0.1.2-Linux-Ubuntu24-x64.tar.gz` | Extract and launch `CassetteStudio`. Install FFmpeg, GTK 3, WebKitGTK 4.1, libxdo and D-Bus first. |
+| Arch Linux x86_64 | `cassette-studio-0.1.2-1-x86_64.pkg.tar.zst` | Fully update Arch, then install using `sudo pacman -U ./cassette-studio-0.1.2-1-x86_64.pkg.tar.zst`. |
 | macOS 15+ Apple Silicon | `CassetteStudio-0.1.2-macOS-arm64.zip` | Extract, move `Cassette Studio.app` to Applications and install external tools as described below. |
 | macOS 15+ Intel | `CassetteStudio-0.1.2-macOS-x64.zip` | Same steps; use the Intel archive. |
 
@@ -87,7 +88,7 @@ Recording settings are in the cassette toolbar. Other views show **Creation / im
 
 ## Platform and planned-feature status
 
-Windows x64, Ubuntu 24.04 x64, macOS 15+ (Apple Silicon / Intel), and the browser interface are supported build targets. macOS packages are built separately on GitHub-hosted Mac runners and checked for native app startup, audio import and DC/fade WAV rendering. Physical audio output and deck recording on a Mac have not been verified.
+Windows x64, Ubuntu 24.04 x64, Arch Linux x86_64, macOS 15+ (Apple Silicon / Intel), and the browser interface are supported build targets. macOS packages are built separately on GitHub-hosted Mac runners and checked for native app startup, audio import and DC/fade WAV rendering. Physical audio output and deck recording on a Mac have not been verified.
 
 Dolby B/C-compatible encoding and decoding are not implemented. See the [Japanese research report with an English summary](docs/dolby-b-c-research.ja.md) for technical sources, calibration and interoperability work still required.
 
@@ -182,6 +183,29 @@ WebView preferences use the same root. Distribution files and this repository ex
 | `CASSETTE_FFMPEG`, `CASSETTE_FFPROBE`, `CASSETTE_YT_DLP`, `CASSETTE_NODE` | Full paths to external tools |
 
 Tool discovery checks overrides, `tools/` beside the executable, the executable directory, development `tools/`, and PATH.
+
+## Arch Linux
+
+The Arch package is built from source in the official Arch Linux container using Arch packages; it is separate from the Ubuntu build. Update your system before installing:
+
+```sh
+sudo pacman -Syu
+sudo pacman -U ./cassette-studio-0.1.2-1-x86_64.pkg.tar.zst
+cassette-studio
+```
+
+The desktop entry is also available in your application menu. `cassette-studio-browser` starts the local browser interface. Runtime dependencies, including FFmpeg and WebKitGTK 4.1, are resolved by pacman. For URL imports, optionally install `yt-dlp` and `nodejs`. File dialogs require a working desktop portal backend; on GTK/Xfce desktops install `xdg-desktop-portal-gtk` if no suitable backend is configured.
+
+To rebuild, download **PKGBUILD** and **CassetteStudio-0.1.2-Arch-source.tar.gz** from the same release into an empty folder, inspect PKGBUILD, then run as a regular user:
+
+```sh
+sudo pacman -S --needed base-devel rust pkgconf python
+makepkg -si
+```
+
+The source archive is checked against the SHA-256 embedded in PKGBUILD. It is a release-specific snapshot including the Arch packaging and updated documentation; the application version remains 0.1.2. The repository template is `packaging/arch/PKGBUILD.in`, and `scripts/prepare-arch-package.py` generates the concrete checksummed files from the current commit.
+
+This is a GitHub download, not an official Arch repository or AUR package. Arch is rolling release software; the package is tested against the build-time repository state and may need rebuilding after system library changes. CI checks package installation, native-window startup under Xvfb, audio import, DC/fade WAV generation and embedded UI assets. Physical sound output, deck recording, and every desktop/Wayland combination are not covered by these checks.
 
 ## macOS
 

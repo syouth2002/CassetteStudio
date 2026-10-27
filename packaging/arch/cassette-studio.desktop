@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Cassette Studio
+Comment=Prepare and record your cassette mixtapes
+Comment[ja]=カセットテープの選曲・録音準備
+Exec=cassette-studio
+Icon=cassette-studio
+Terminal=false
+Categories=AudioVideo;Audio;

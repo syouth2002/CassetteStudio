@@ -17,6 +17,7 @@ v0.1.2には、オプション画面・録音用基準音・再生範囲の自�
 | Windows x64 | `CassetteStudio-0.1.2-Windows-x64.zip` | フォルダ全体を展開し、`SetupAudioTools.cmd`でFFmpeg・FFprobe・yt-dlpを取得した後、`CassetteStudio.exe`を起動します。WebView2が必要です。 |
 | Ubuntu 24.04 x64 | `CassetteStudio-0.1.2-Ubuntu24-amd64.deb` | `sudo apt install ./CassetteStudio-0.1.2-Ubuntu24-amd64.deb`で導入し、アプリ一覧から起動します。FFmpegなどは依存パッケージとして導入されます。 |
 | Linux x64展開版 | `CassetteStudio-0.1.2-Linux-Ubuntu24-x64.tar.gz` | 展開後にCassetteStudioを起動します。FFmpeg・GTK 3・WebKitGTK 4.1・libxdo・D-Busを別途導入してください。 |
+| Arch Linux x86_64 | `cassette-studio-0.1.2-1-x86_64.pkg.tar.zst` | システムを更新後、`sudo pacman -U ./cassette-studio-0.1.2-1-x86_64.pkg.tar.zst`で導入します。 |
 | macOS 15以降・Apple Silicon | `CassetteStudio-0.1.2-macOS-arm64.zip` | 展開し、`Cassette Studio.app`をアプリケーションへ移動。下記のmacOS手順で外部音声ツールを導入します。 |
 | macOS 15以降・Intel | `CassetteStudio-0.1.2-macOS-x64.zip` | Intel用アーカイブを選び、同じ手順で導入します。 |
 
@@ -71,6 +72,29 @@ sh scripts/start.sh
 または `cargo run --release --features desktop --bin cassette-studio-desktop --locked`。ブラウザ版は `sh scripts/start-browser.sh` です。Ubuntu 24.04のWSL環境でビルド・基本テストを確認しています。
 
 ![カセットのA・B面と残り時間](docs/screenshots/cassette-ja.jpg)
+
+## Arch Linux
+
+Arch公式コンテナ内で、Archのパッケージを使ってソースからビルドします。Ubuntu向け配布ファイルとは別のパッケージです。システムを更新してから導入してください。
+
+```sh
+sudo pacman -Syu
+sudo pacman -U ./cassette-studio-0.1.2-1-x86_64.pkg.tar.zst
+cassette-studio
+```
+
+アプリ一覧からも起動できます。ブラウザ版は`cassette-studio-browser`です。FFmpeg・WebKitGTK 4.1などの実行時依存はpacmanが解決します。URL取り込みを使う場合は`yt-dlp`・`nodejs`も導入してください。ファイル選択にはデスクトップのポータルが必要です。GTK／Xfce環境で適切なバックエンドが未設定なら`xdg-desktop-portal-gtk`を導入します。
+
+再ビルドする場合は、同じリリースから**PKGBUILD**と**CassetteStudio-0.1.2-Arch-source.tar.gz**を空のフォルダへ取得し、PKGBUILDの内容を確認してから一般ユーザーで実行します。
+
+```sh
+sudo pacman -S --needed base-devel rust pkgconf python
+makepkg -si
+```
+
+ソースはPKGBUILD内のSHA-256と照合します。このソースアーカイブはArch用の梱包処理と更新済みドキュメントを含むスナップショットで、アプリのバージョンは0.1.2です。テンプレートは`packaging/arch/PKGBUILD.in`、チェックサム付きのファイル作成は`scripts/prepare-arch-package.py`です。
+
+GitHubから提供する配布物で、Arch公式リポジトリやAURへの登録はしていません。ローリングリリースのため、システムライブラリの更新後には再ビルドが必要になる場合があります。CIではパッケージ導入、Xvfb上の専用ウィンドウ起動、音源取り込み、DC／フェードを含むWAV生成、内蔵画面ファイルを確認します。物理音声出力・デッキ録音や、すべてのデスクトップ／Wayland環境を検証するものではありません。
 
 ## macOS
 
@@ -144,7 +168,7 @@ Apple Silicon／Intelは別々に作成します。`scripts/test-macos-package.p
 
 ## 対応状況と今後の機能
 
-Windows x64・Ubuntu 24.04 x64・macOS 15以降（Apple Silicon／Intel）とブラウザ版を対象にしています。macOSはGitHub上のMac環境でアーキテクチャごとにビルドし、アプリ起動・音源取り込み・DC／フェードを含むWAV生成を検証します。Mac実機の音声出力やデッキ録音は未確認です。
+Windows x64・Ubuntu 24.04 x64・Arch Linux x86_64・macOS 15以降（Apple Silicon／Intel）とブラウザ版を対象にしています。macOSはGitHub上のMac環境でアーキテクチャごとにビルドし、アプリ起動・音源取り込み・DC／フェードを含むWAV生成を検証します。Mac実機の音声出力やデッキ録音は未確認です。
 
 Dolby B/C相当のエンコード・デコードは未実装です。[実装調査資料](docs/dolby-b-c-research.ja.md)に原理・公開資料・校正と実機検証の課題をまとめています。
 
