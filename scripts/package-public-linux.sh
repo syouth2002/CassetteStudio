@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 project=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-version=${1:-0.1.2}
+version=${1:-0.1.3}
 release="$project/dist/releases/v$version"
 stage="$release/linux-x64"
 test ! -e "$stage" || { echo "Stage already exists: $stage" >&2; exit 1; }
@@ -9,7 +9,7 @@ mkdir -p "$stage/docs" "$stage/assets"
 cp "$project/assets/cassette-studio-app.png" "$stage/assets/"
 cp "$project/dist/linux-x64/CassetteStudio" "$project/dist/linux-x64/cassette-studio-browser" "$stage/"
 for file in README.md README.ja.md LICENSE THIRD_PARTY_NOTICES.md; do cp "$project/$file" "$stage/$file"; done
-cp "$project/docs/dolby-b-c-research.ja.md" "$stage/docs/"
+cp "$project"/docs/*.md "$stage/docs/"
 cp -r "$project/docs/screenshots" "$stage/docs/"
 python3 "$project/scripts/collect-licenses.py" --target x86_64-unknown-linux-gnu --output "$stage/licenses"
 chmod 755 "$stage/CassetteStudio" "$stage/cassette-studio-browser"

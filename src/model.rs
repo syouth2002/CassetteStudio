@@ -41,6 +41,10 @@ pub struct Settings {
     /// Already included in side_seconds; preserved to edit the nominal length independently.
     pub length_correction: f64,
     pub gap: f64,
+    /// Silence reserved at the beginning of both cassette sides.
+    pub lead_in: f64,
+    /// None retains the existing 16-bit / 44.1 kHz output behavior.
+    pub wav_sample_rate: Option<u32>,
     pub fill_threshold: f64,
     pub fade: f64,
     pub continuation: String,
@@ -58,6 +62,8 @@ impl Default for Settings {
             side_seconds: 1800.0,
             length_correction: 0.0,
             gap: 2.0,
+            lead_in: 0.0,
+            wav_sample_rate: None,
             fill_threshold: 30.0,
             fade: 5.0,
             continuation: "restart".into(),
@@ -72,11 +78,20 @@ impl Default for Settings {
     }
 }
 impl Settings {
+    pub fn content_seconds(&self) -> f64 {
+        self.side_seconds - self.lead_in
+    }
+
+    pub fn output_sample_rate(&self) -> u32 {
+        self.wav_sample_rate.unwrap_or(44100)
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         for (name, value, min, max) in [
             ("片面の長さ", self.side_seconds, 1.0, 7200.0),
             ("長さの補正", self.length_correction, -3600.0, 3600.0),
             ("曲間", self.gap, 0.0, 60.0),
+            ("先頭の無音", self.lead_in, 0.0, 7200.0),
             ("余白の基準", self.fill_threshold, 0.0, 7200.0),
             ("フェード", self.fade, 0.01, 60.0),
             ("巻き戻し", self.rewind, 0.0, 60.0),
@@ -88,6 +103,15 @@ impl Settings {
             if !value.is_finite() || value < min || value > max {
                 return Err(format!("{name}の値が範囲外です"));
             }
+        }
+        if self.lead_in > self.side_seconds {
+            return Err("先頭の無音が片面の長さを超えています".into());
+        }
+        if (self.lead_in * 2.0 - (self.lead_in * 2.0).round()).abs() > 1e-8 {
+            return Err("先頭の無音は0.5秒刻みで指定してください".into());
+        }
+        if !matches!(self.wav_sample_rate, None | Some(44100 | 48000)) {
+            return Err("WAVのサンプリングレートは未設定・44100・48000から選択してください".into());
         }
         if self.continuation != "restart" && self.continuation != "resume" {
             return Err("引き継ぎ方式が不正です".into());
@@ -123,4 +147,39 @@ pub struct Library {
 
 pub fn side_duration(entries: &[Entry], gap: f64) -> f64 {
     entries.iter().map(|e| e.duration).sum::<f64>() + gap * entries.len().saturating_sub(1) as f64
+}
+
+#[cfg(test)]
+mod settings_tests {
+    use super::*;
+
+    #[test]
+    fn legacy_settings_and_dat_formats() {
+        let mut s: Settings = serde_json::from_str("{}").unwrap();
+        assert_eq!(s.lead_in, 0.0);
+        assert_eq!(s.wav_sample_rate, None);
+        assert_eq!(s.output_sample_rate(), 44100);
+        for rate in [44100, 48000] {
+            s.wav_sample_rate = Some(rate);
+            assert!(s.validate().is_ok());
+            assert_eq!(s.output_sample_rate(), rate);
+        }
+        s.wav_sample_rate = Some(96000);
+        assert!(s.validate().is_err());
+    }
+
+    #[test]
+    fn lead_in_reserves_capacity_and_uses_half_seconds() {
+        let mut s = Settings {
+            side_seconds: 10.0,
+            lead_in: 2.5,
+            ..Settings::default()
+        };
+        assert_eq!(s.content_seconds(), 7.5);
+        assert!(s.validate().is_ok());
+        for invalid in [-0.5, 0.25, 10.5, f64::NAN] {
+            s.lead_in = invalid;
+            assert!(s.validate().is_err());
+        }
+    }
 }

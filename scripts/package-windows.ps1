@@ -21,6 +21,7 @@ try {
     foreach ($document in @('README.md','README.ja.md','LICENSE','THIRD_PARTY_NOTICES.md')) {
         Copy-Item -LiteralPath $document -Destination (Join-Path $destination $document) -Force
     }
+    Copy-Item -LiteralPath 'docs' -Destination (Join-Path $destination 'docs') -Recurse -Force
     'Keep this file to save this portable copy''s library in data/ beside the application.' | Set-Content -LiteralPath (Join-Path $destination 'portable.txt') -Encoding utf8
     # Runtime dependencies are downloaded from official distribution sites.
     Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/yt-dlp/yt-dlp/master/LICENSE' -OutFile (Join-Path $toolsTarget 'yt-dlp-LICENSE.txt')

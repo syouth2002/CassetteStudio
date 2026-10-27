@@ -7,7 +7,8 @@ const context={ArrayBuffer,DataView,Math,Number,Blob,$:element,csText:s=>s,toast
  URL:{createObjectURL:()=> 'blob:test',revokeObjectURL:()=>revoked++},
  setTimeout:fn=>{timer=fn;return 1;},clearTimeout:()=>{timer=null;},addEventListener(){}};
 context.window=context;context.stop=()=>context.csStopReferenceTone();vm.createContext(context);
-vm.runInContext(fs.readFileSync('web/reference-tone.js','utf8'),context);
+vm.runInContext(fs.readFileSync('web/js/audio/reference-tone.js','utf8'),context);
+context.bindReferenceToneControls();
 for(const frequency of [400,1000])for(const level of [-30,-18,-12,-3]){
  const view=new DataView(vm.runInContext(`referenceToneWav(${frequency},${level})`,context));
  assert.equal(view.getUint32(24,true),48000);assert.equal(view.getUint16(22,true),2);

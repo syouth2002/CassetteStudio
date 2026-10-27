@@ -1,6 +1,6 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const source=fs.readFileSync('web/app.js','utf8'),context={};vm.createContext(context);
-vm.runInContext(source.match(/function fitTapeEntry\([^\n]+/)[0],context);
+const source=fs.readFileSync('web/js/cassette.js','utf8'),context={};vm.createContext(context);
+vm.runInContext(source,context);
 const entry={track_id:'test',offset:0,duration:200,fade_in:4,fade_out:5},s={side_seconds:100,fade:5,gap:2};
 let result=context.fitTapeEntry(entry,30,60,s);
 assert.equal(result.duration,30);assert.equal(result.fade_in,0);assert.equal(result.fade_out,0);
@@ -14,16 +14,15 @@ const list=[];for(const duration of [40,100,30]){const occupied=list.reduce((n,e
 assert.equal(list.length,2);assert.equal(list[1].duration,58);assert.equal(list[1].fade_out,5);
 assert.equal(list.reduce((n,e)=>n+e.duration,0)+(list.length-1)*s.gap,100);
 const html=fs.readFileSync('web/index.html','utf8');assert.match(html,/id="entry-duration"[^>]*step="0.1"/);
-assert.match(html,/id="entry-auto" type="button"/);
+assert.match(html,/id="entry-auto"\s+type="button"/);
 const controls=new Map();context.$=id=>{if(!controls.has(id))controls.set(id,{value:0,close(){},showModal(){}});return controls.get(id);};
 let editedList=[{...entry,duration:60.06},{...entry,duration:20}];
 context.entries=()=>editedList;context.selected=new Set([0]);context.config=()=>({...s,side_seconds:82.08});
 context.track=()=>({});context.duration=()=>60.06;context.csText=s=>s;
 context.toast=()=>assert.fail('Unexpected validation error');context.changed=()=>{};
 vm.runInContext('let entryAutoDuration=null;',context);
-for(const prefix of ["$('edit-entry').onclick=", "$('entry-auto').onclick=", "$('entry-form').onsubmit="]){
- vm.runInContext(source.split('\n').find(line=>line.startsWith(prefix)),context);
-}
+vm.runInContext(fs.readFileSync('web/js/buttons/entries.js','utf8'),context);
+context.bindEntriesControls();
 context.$('edit-entry').onclick();assert.equal(context.$('entry-duration').value,'60.1');
 context.$('entry-auto').onclick();assert.equal(Number(context.$('entry-out').value),0);
 context.$('entry-form').onsubmit({preventDefault(){}});
@@ -33,3 +32,13 @@ context.$('edit-entry').onclick();context.$('entry-auto').onclick();
 context.$('entry-form').onsubmit({preventDefault(){}});
 assert.equal(editedList[0].duration,50);assert.equal(editedList[0].fade_out,5);
 console.log('PASS: fade removal, capacity/offset/gaps, clipped fade, full side, sequential additions, 0.1-second display');
+
+assert.equal(vm.runInContext('total([], {lead_in:2.5,gap:2})',context),2.5);
+context.config=()=>({...s,side_seconds:72.08,lead_in:2.5});
+context.$('edit-entry').onclick();context.$('entry-auto').onclick();context.$('entry-form').onsubmit({preventDefault(){}});
+assert.equal(editedList[0].duration,47.5);
+vm.runInContext(fs.readFileSync('web/js/audio/player.js','utf8'),context);
+assert.equal(context.startAt(0,{list:[{duration:10}],gap:2,lead_in:2.5}),2.5);
+assert.equal(context.startAt(1,{list:[{duration:10},{duration:3}],gap:2,lead_in:2.5}),14.5);
+assert.equal(context.tapeIndex(1,{list:[{duration:10},{duration:3}],gap:2,lead_in:2.5}),0);
+assert.equal(context.tapeIndex(14.5,{list:[{duration:10},{duration:3}],gap:2,lead_in:2.5}),1);

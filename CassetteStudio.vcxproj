@@ -24,8 +24,8 @@
     <IntDir>$(ProjectDir)target\vs\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="Cargo.toml" /><None Include="Cargo.lock" /><None Include="README.md" />
-    <None Include="src\*.rs" /><None Include="src\bin\*.rs" /><None Include="web\*" /><None Include="scripts\*" />
+    <None Include="Cargo.toml" /><None Include="Cargo.lock" /><None Include="README.md" /><None Include="README.ja.md" /><None Include="docs\architecture*.md" />
+    <None Include="src\**\*.rs" /><None Include="web\**\*" /><None Include="scripts\*" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

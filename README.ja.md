@@ -6,7 +6,7 @@
 
 カセットテープ用の選曲・録音準備アプリ。ソースコードは[MITライセンス](LICENSE)です。
 
-v0.1.2には、オプション画面・録音用基準音・再生範囲の自動設定と、macOS用アプリの配布ファイルが含まれます。
+v0.1.3では、A/B各面の先頭無音、DAT向けWAV形式、非対応環境での出力先ボタンの非表示に対応しました。ソースコードも表示・操作・音声処理・サーバーの役割ごとに整理しています。
 
 ## ダウンロードして使う
 
@@ -14,16 +14,18 @@ v0.1.2には、オプション画面・録音用基準音・再生範囲の自�
 
 | 環境 | 配布ファイル | 初回の使い方 |
 | --- | --- | --- |
-| Windows x64 | `CassetteStudio-0.1.2-Windows-x64.zip` | フォルダ全体を展開し、`SetupAudioTools.cmd`でFFmpeg・FFprobe・yt-dlpを取得した後、`CassetteStudio.exe`を起動します。WebView2が必要です。 |
-| Ubuntu 24.04 x64 | `CassetteStudio-0.1.2-Ubuntu24-amd64.deb` | `sudo apt install ./CassetteStudio-0.1.2-Ubuntu24-amd64.deb`で導入し、アプリ一覧から起動します。FFmpegなどは依存パッケージとして導入されます。 |
-| Linux x64展開版 | `CassetteStudio-0.1.2-Linux-Ubuntu24-x64.tar.gz` | 展開後にCassetteStudioを起動します。FFmpeg・GTK 3・WebKitGTK 4.1・libxdo・D-Busを別途導入してください。 |
-| Arch Linux x86_64 | `cassette-studio-0.1.2-1-x86_64.pkg.tar.zst` | システムを更新後、`sudo pacman -U ./cassette-studio-0.1.2-1-x86_64.pkg.tar.zst`で導入します。 |
-| macOS 15以降・Apple Silicon | `CassetteStudio-0.1.2-macOS-arm64.zip` | 展開し、`Cassette Studio.app`をアプリケーションへ移動。下記のmacOS手順で外部音声ツールを導入します。 |
-| macOS 15以降・Intel | `CassetteStudio-0.1.2-macOS-x64.zip` | Intel用アーカイブを選び、同じ手順で導入します。 |
+| Windows x64 | `CassetteStudio-0.1.3-Windows-x64.zip` | フォルダ全体を展開し、`SetupAudioTools.cmd`でFFmpeg・FFprobe・yt-dlpを取得した後、`CassetteStudio.exe`を起動します。WebView2が必要です。 |
+| Ubuntu 24.04 x64 | `CassetteStudio-0.1.3-Ubuntu24-amd64.deb` | `sudo apt install ./CassetteStudio-0.1.3-Ubuntu24-amd64.deb`で導入し、アプリ一覧から起動します。FFmpegなどは依存パッケージとして導入されます。 |
+| Linux x64展開版 | `CassetteStudio-0.1.3-Linux-Ubuntu24-x64.tar.gz` | 展開後にCassetteStudioを起動します。FFmpeg・GTK 3・WebKitGTK 4.1・libxdo・D-Busを別途導入してください。 |
+| Arch Linux x86_64 | `cassette-studio-0.1.3-1-x86_64.pkg.tar.zst` | システムを更新後、`sudo pacman -U ./cassette-studio-0.1.3-1-x86_64.pkg.tar.zst`で導入します。 |
+| macOS 15以降・Apple Silicon | `CassetteStudio-0.1.3-macOS-arm64.zip` | 展開し、`Cassette Studio.app`をアプリケーションへ移動。下記のmacOS手順で外部音声ツールを導入します。 |
+| macOS 15以降・Intel | `CassetteStudio-0.1.3-macOS-x64.zip` | Intel用アーカイブを選び、同じ手順で導入します。 |
 
 公開用の配布ファイルには、アプリ本体・日英の説明・画面画像・依存ライブラリのライセンスを含めています。外部音声ツールは同梱せず、別途導入します。Windowsの初回ツール取得にはネット接続が必要です。URL取り込みには[Node.js 22以上](https://nodejs.org/ja/download)、Linuxでは最新の[yt-dlp](https://github.com/yt-dlp/yt-dlp#installation)も用意してください。ローカル音声の取り込みにはNodeやyt-dlpは不要です。通常利用にRustは必要ありません。配布ファイルの検証にはリリースのSHA256SUMS.txtを使用できます。
 
 以下は最新版ソースのブラウザ画面を、架空のデモ曲で撮影したものです。専用ウィンドウ版も同じ操作画面を使用します。個人のライブラリや音源は含みません。
+
+スクリーンショットは、架空の曲名を使ったWindows単体アプリの画面です。プラットフォームにより外観が多少異なります。
 
 ![ライブラリと再生コントロール](docs/screenshots/library-ja.jpg)
 
@@ -79,20 +81,20 @@ Arch公式コンテナ内で、Archのパッケージを使ってソースから
 
 ```sh
 sudo pacman -Syu
-sudo pacman -U ./cassette-studio-0.1.2-1-x86_64.pkg.tar.zst
+sudo pacman -U ./cassette-studio-0.1.3-1-x86_64.pkg.tar.zst
 cassette-studio
 ```
 
 アプリ一覧からも起動できます。ブラウザ版は`cassette-studio-browser`です。FFmpeg・WebKitGTK 4.1などの実行時依存はpacmanが解決します。URL取り込みを使う場合は`yt-dlp`・`nodejs`も導入してください。ファイル選択にはデスクトップのポータルが必要です。GTK／Xfce環境で適切なバックエンドが未設定なら`xdg-desktop-portal-gtk`を導入します。
 
-再ビルドする場合は、同じリリースから**PKGBUILD**と**CassetteStudio-0.1.2-Arch-source.tar.gz**を空のフォルダへ取得し、PKGBUILDの内容を確認してから一般ユーザーで実行します。
+再ビルドする場合は、同じリリースから**PKGBUILD**と**CassetteStudio-0.1.3-Arch-source.tar.gz**を空のフォルダへ取得し、PKGBUILDの内容を確認してから一般ユーザーで実行します。
 
 ```sh
 sudo pacman -S --needed base-devel rust pkgconf python
 makepkg -si
 ```
 
-ソースはPKGBUILD内のSHA-256と照合します。このソースアーカイブはArch用の梱包処理と更新済みドキュメントを含むスナップショットで、アプリのバージョンは0.1.2です。テンプレートは`packaging/arch/PKGBUILD.in`、チェックサム付きのファイル作成は`scripts/prepare-arch-package.py`です。
+ソースはPKGBUILD内のSHA-256と照合します。このソースアーカイブはArch用の梱包処理と更新済みドキュメントを含むスナップショットで、アプリのバージョンは0.1.3です。テンプレートは`packaging/arch/PKGBUILD.in`、チェックサム付きのファイル作成は`scripts/prepare-arch-package.py`です。
 
 GitHubから提供する配布物で、Arch公式リポジトリやAURへの登録はしていません。ローリングリリースのため、システムライブラリの更新後には再ビルドが必要になる場合があります。CIではパッケージ導入、Xvfb上の専用ウィンドウ起動、音源取り込み、DC／フェードを含むWAV生成、内蔵画面ファイルを確認します。物理音声出力・デッキ録音や、すべてのデスクトップ／Wayland環境を検証するものではありません。
 
@@ -117,7 +119,7 @@ brew install yt-dlp node
 ```sh
 cargo run --release --features desktop --bin cassette-studio-desktop --locked
 # 現在のMacのアーキテクチャ用パッケージを作成:
-sh scripts/package-public-macos.sh 0.1.2
+sh scripts/package-public-macos.sh 0.1.3
 ```
 
 Apple Silicon／Intelは別々に作成します。`scripts/test-macos-package.py`は合成音源と一時ライブラリで、配布アプリとブラウザ用実行ファイルを検証します。物理的な再生・録音の確認を代替するものではありません。
@@ -126,7 +128,7 @@ Apple Silicon／Intelは別々に作成します。`scripts/test-macos-package.p
 
 録音設定の時間は46 / 60 / 74 / 80 / 90 / 120分 / カスタムから選択します。「長さの補正（片面あたり・秒）」で各カセットの実測との差を補正できます。C60で＋15秒ならA/B各面30分15秒です。自動配置・残り時間・WAV書き出しは補正後の時間を使います。既存カセットは左ペインで選び、カセットのツールバーから「録音設定」を開きます。プレイリストや「すべての曲」では「作成・取り込み設定」と表示します。曲間・フェード・途中再生の巻き戻しは0.5秒刻みです。
 
-![テープ時間の補正・曲間・引き継ぎ・音量の設定](docs/screenshots/settings-ja.jpg)
+![テープ時間の補正・先頭無音・DAT向けWAV形式・音量の設定](docs/screenshots/settings-ja.jpg)
 
 ## オプション
 
@@ -182,11 +184,13 @@ Dolby B/C相当のエンコード・デコードは未実装です。[実装調�
 - カセットも曲順変更、曲追加・削除、反対面への移動、曲の開始位置・長さ・フェードを編集できます。手動追加で時間を超える曲は、残り時間に合わせて短縮・フェードアウトします。並べ替えや反対面への移動などで時間超過になった場合は、再生範囲の自動設定か曲の移動・削除で調整してください。
 - 設定の引き継ぎ方式や余白基準は新しいカセット作成時に適用されます。既存の面を変更する場合は再生範囲編集を使うか、元のプレイリストから再作成してください。
 - 無音設定は新規取り込みへ適用。既存音源の再解析は作成済みカセットを削除してから実行します。途中の無音は保持します。両端無音が除去された後、指定の曲間無音を挿入します。
-- 画面下部に再生／一時停止／停止、前後の曲、シーク、音量、時間表示があります。対応ブラウザでは出力先も選択可能です。
+- 画面下部に再生／一時停止／停止、前後の曲、シーク、音量、時間表示があります。出力先の選択と切り替えの両機能に対応する環境だけ「出力先」ボタンを表示します。それ以外ではOSの音声設定で出力先を選んでください。WAV生成には影響しません。
 - カセット再生は、書き出しと同じ音声を生成してから再生します。曲間・フェードが一致します。A面終了で停止し、テープを裏返してB面を開始します。
 - 「デッキ録音用に準備」で現在の面を準備。デッキで録音を開始し、「5秒後に再生開始」を押してください。ハードウェアの録音ボタンを直接制御する機能ではありません。
 - WAV保存リンクは生成したカセットを選んでいるときだけ表示し、収録内容や設定を変更すると非表示になります。
-- 書き出しはA/B各面のWAV（44.1kHz / 16bit / ステレオ）。末尾の残り時間は無音で埋め、指定した片面長にします。
+- 書き出しはA/B各面の16bitステレオWAV。録音設定でDAT向けに48kHzまたは44.1kHzを選択できます。「未設定」は従来どおり44.1kHzです。末尾の残り時間は無音で埋め、指定した片面長にします。
+- 録音設定でA/B各面の先頭無音を0.5秒刻みで指定できます（初期値0秒、両面共通）。先頭無音はテープの使用時間に含まれ、再生・自動配置・WAV生成に反映されます。既存のカセットで時間が不足する場合は、曲の再配置または再生範囲の自動設定を行ってください。
+- WAV形式の設定は書き出し用です。元ファイルや曲単体の試聴形式、録音機器の設定は変更しません。
 - URLはyt-dlp対応サイトの単一動画・音声を取り込みます。プレイリストURLの一括展開、DRM、ログイン必須コンテンツは対象外です。サイト側の変更や取得制限によって失敗する場合があります。
 
 ## データと実行設定
@@ -228,6 +232,7 @@ node scripts/test-tape-settings.cjs
 node scripts/test-downloads.cjs
 node scripts/test-reference-tone.cjs
 node scripts/test-entry-fit.cjs
+node scripts/test-frontend-startup.cjs
 ```
 
 FFmpegがある環境で `cargo build --locked` の後に `node scripts/smoke-test.mjs` を実行すると、合成した音楽・動画を使い、無音解析、両方の引き継ぎ、WAVの秒数、フェードの音量変化、保存、HTTP Range、時間超過の拒否を一括検証します。テスト用データはwork配下に保存され、通常のライブラリには入りません。
@@ -249,7 +254,7 @@ Shift_JIS/CP932の日本語タグがLatin-1として読み取られ、制御文�
 
 ## 公開用パッケージの作成
 
-Windowsはscripts/package-public-windows.ps1、Linuxはビルド後にscripts/package-public-linux.sh、macOSは各Mac環境でscripts/package-public-macos.shを使用します。dist/releases/v0.1.2/へアプリ本体のみの配布ファイルを作ります。依存関係のライセンス収集にPython 3とRustに付属する著作権表示ファイルが必要です。従来のpackage-windows.ps1・package-linux.shは外部ツール同梱のローカル用パッケージを作成する補助スクリプトで、公開リリースには使用しません。
+Windowsはscripts/package-public-windows.ps1、Linuxはビルド後にscripts/package-public-linux.sh、macOSは各Mac環境でscripts/package-public-macos.shを使用します。dist/releases/v0.1.3/へアプリ本体のみの配布ファイルを作ります。依存関係のライセンス収集にPython 3とRustに付属する著作権表示ファイルが必要です。従来のpackage-windows.ps1・package-linux.shは外部ツール同梱のローカル用パッケージを作成する補助スクリプトで、公開リリースには使用しません。
 
 ## DCオフセットの除去
 
@@ -260,3 +265,9 @@ Windowsはscripts/package-public-windows.ps1、Linuxはビルド後にscripts/pa
 DC除去ONで取り込む場合は補正前後で両端の無音を確認します。設定を変えても既存の再生範囲は変えません。無音範囲も更新する場合は既存カセットを削除して音源を再解析してください。この機能は一定の平均ずれを除去するもので、時間変動する低域を除去するフィルターや、デッキの録音バイアス調整ではありません。
 
 `node scripts/test-dc.mjs`で、合成音源による左右別補正、モノラル、無音、曲の両端、試聴/WAV一致、フェード、A/B引き継ぎ、音量統一、ピーク制限、旧データ、保存、元ファイル保持を検証できます。
+
+## ソースコードの構成
+
+表示・ボタン操作・音声処理・API・保存の分担は[ソースコードの役割](docs/architecture.ja.md)を参照してください。
+
+`node scripts/test-dat-settings.mjs`で、先頭無音、DAT向けWAV形式、A/B引き継ぎ、容量計算、設定保存を合成音源で検証できます。

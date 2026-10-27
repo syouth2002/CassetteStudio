@@ -8,7 +8,7 @@ A Rust application for arranging cassette mixtapes, preparing deck playback, and
 
 Source code and documentation: [MIT](LICENSE). Dependencies and external tools retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
 
-Version 0.1.2 includes Options, a recording reference tone, playback-range auto fit and macOS application packages.
+Version 0.1.3 adds leading silence for both tape sides, DAT-oriented WAV formats, and automatic hiding of unsupported output selection. The source is organized by display, controls, audio processing, and server responsibilities.
 
 ## Download and start
 
@@ -16,12 +16,12 @@ Get the application from [GitHub Releases](https://github.com/syouth2002/Cassett
 
 | Platform | Download | First use |
 | --- | --- | --- |
-| Windows x64 | `CassetteStudio-0.1.2-Windows-x64.zip` | Extract the entire folder, run `SetupAudioTools.cmd` once to obtain FFmpeg/FFprobe and yt-dlp, then run `CassetteStudio.exe`. WebView2 must be installed. |
-| Ubuntu 24.04 x64 | `CassetteStudio-0.1.2-Ubuntu24-amd64.deb` | Run `sudo apt install ./CassetteStudio-0.1.2-Ubuntu24-amd64.deb`, then start Cassette Studio from the app menu. FFmpeg and system runtimes are installed as dependencies. |
-| Linux x64 archive | `CassetteStudio-0.1.2-Linux-Ubuntu24-x64.tar.gz` | Extract and launch `CassetteStudio`. Install FFmpeg, GTK 3, WebKitGTK 4.1, libxdo and D-Bus first. |
-| Arch Linux x86_64 | `cassette-studio-0.1.2-1-x86_64.pkg.tar.zst` | Fully update Arch, then install using `sudo pacman -U ./cassette-studio-0.1.2-1-x86_64.pkg.tar.zst`. |
-| macOS 15+ Apple Silicon | `CassetteStudio-0.1.2-macOS-arm64.zip` | Extract, move `Cassette Studio.app` to Applications and install external tools as described below. |
-| macOS 15+ Intel | `CassetteStudio-0.1.2-macOS-x64.zip` | Same steps; use the Intel archive. |
+| Windows x64 | `CassetteStudio-0.1.3-Windows-x64.zip` | Extract the entire folder, run `SetupAudioTools.cmd` once to obtain FFmpeg/FFprobe and yt-dlp, then run `CassetteStudio.exe`. WebView2 must be installed. |
+| Ubuntu 24.04 x64 | `CassetteStudio-0.1.3-Ubuntu24-amd64.deb` | Run `sudo apt install ./CassetteStudio-0.1.3-Ubuntu24-amd64.deb`, then start Cassette Studio from the app menu. FFmpeg and system runtimes are installed as dependencies. |
+| Linux x64 archive | `CassetteStudio-0.1.3-Linux-Ubuntu24-x64.tar.gz` | Extract and launch `CassetteStudio`. Install FFmpeg, GTK 3, WebKitGTK 4.1, libxdo and D-Bus first. |
+| Arch Linux x86_64 | `cassette-studio-0.1.3-1-x86_64.pkg.tar.zst` | Fully update Arch, then install using `sudo pacman -U ./cassette-studio-0.1.3-1-x86_64.pkg.tar.zst`. |
+| macOS 15+ Apple Silicon | `CassetteStudio-0.1.3-macOS-arm64.zip` | Extract, move `Cassette Studio.app` to Applications and install external tools as described below. |
+| macOS 15+ Intel | `CassetteStudio-0.1.3-macOS-x64.zip` | Same steps; use the Intel archive. |
 
 Release downloads contain the app, bilingual instructions, screenshots and dependency notices. External audio tools are installed separately; they are not bundled in the public release. Windows first-time audio-tool setup needs internet access. For URL imports, install [Node.js 22+](https://nodejs.org/en/download); Linux also needs a current [yt-dlp](https://github.com/yt-dlp/yt-dlp#installation). Local audio imports do not need Node or yt-dlp. Rust is not needed to use these downloads. Check archive integrity against the release's `SHA256SUMS.txt`.
 
@@ -37,12 +37,16 @@ Screenshots show the latest browser interface with fictional demo tracks. The de
 - Fill sufficiently large remaining space with a track faded out at the side's end. Continue it on side B from the beginning, or from the cut position with a fade-in and optional rewind.
 - Set gaps, fade-in/out, and continuation rewind in 0.5-second increments.
 - Play/pause/stop, seek, adjust volume, and skip tracks. The text sidebar includes small cassette icons.
-- Export A/B WAV files at 44.1 kHz, 16-bit stereo, padded to corrected capacity. Save links appear only for the selected cassette's generated audio; editing its contents or settings invalidates them.
+- Export A/B WAV files as 16-bit stereo, padded to corrected capacity. Recording settings offer DAT-oriented 48 kHz and 44.1 kHz output; Unspecified keeps the existing 44.1 kHz format. Save links appear only for the selected cassette's generated audio; editing its contents or settings invalidates them.
 - Prepare playback for a cassette deck with a five-second countdown. The application's controls do not operate the deck's hardware recording button.
 - Import individual URLs supported by yt-dlp. Playlist expansion, DRM, and sign-in-required media are not supported.
 - Recover a detectable legacy Japanese tag encoding error without modifying source media.
 
 First launch selects Japanese when the environment's preferred language is Japanese, otherwise English. Choose the language in **Options**; a manual selection takes priority on subsequent launches. User-provided titles are preserved.
+
+The **Output** button appears only when audio-output selection and switching are both available. Other environments use the output selected in OS sound settings. WAV export is unaffected.
+
+Screenshots show the Windows standalone app using fictional demo titles; controls and layout may vary slightly by platform.
 
 ![English library and playback controls](docs/screenshots/library-en.jpg)
 
@@ -154,7 +158,9 @@ Continuation and fill settings affect newly arranged cassettes. For an existing 
 
 For deck recording, connect computer audio to the deck, prepare the selected side, start the deck's recording, then start the five-second playback countdown. Side A stops at its end; turn the tape over and start B separately. Use media you are entitled to record.
 
-![Tape length correction, gaps, continuation and loudness settings](docs/screenshots/settings-en.jpg)
+Leading silence is shared by A/B sides and adjustable in 0.5-second steps (default: zero). It consumes tape capacity and applies to playback, automatic arrangement, and WAV export. If an existing cassette no longer fits, rearrange its tracks or use playback-range Auto fit. The DAT-oriented WAV format offers Unspecified (16-bit / 44.1 kHz), 16-bit / 48 kHz, and 16-bit / 44.1 kHz. It does not change source files, individual-track previews, or recorder settings.
+
+![Tape length correction, leading silence, DAT WAV format and loudness settings](docs/screenshots/settings-en.jpg)
 
 ## Loudness
 
@@ -190,20 +196,20 @@ The Arch package is built from source in the official Arch Linux container using
 
 ```sh
 sudo pacman -Syu
-sudo pacman -U ./cassette-studio-0.1.2-1-x86_64.pkg.tar.zst
+sudo pacman -U ./cassette-studio-0.1.3-1-x86_64.pkg.tar.zst
 cassette-studio
 ```
 
 The desktop entry is also available in your application menu. `cassette-studio-browser` starts the local browser interface. Runtime dependencies, including FFmpeg and WebKitGTK 4.1, are resolved by pacman. For URL imports, optionally install `yt-dlp` and `nodejs`. File dialogs require a working desktop portal backend; on GTK/Xfce desktops install `xdg-desktop-portal-gtk` if no suitable backend is configured.
 
-To rebuild, download **PKGBUILD** and **CassetteStudio-0.1.2-Arch-source.tar.gz** from the same release into an empty folder, inspect PKGBUILD, then run as a regular user:
+To rebuild, download **PKGBUILD** and **CassetteStudio-0.1.3-Arch-source.tar.gz** from the same release into an empty folder, inspect PKGBUILD, then run as a regular user:
 
 ```sh
 sudo pacman -S --needed base-devel rust pkgconf python
 makepkg -si
 ```
 
-The source archive is checked against the SHA-256 embedded in PKGBUILD. It is a release-specific snapshot including the Arch packaging and updated documentation; the application version remains 0.1.2. The repository template is `packaging/arch/PKGBUILD.in`, and `scripts/prepare-arch-package.py` generates the concrete checksummed files from the current commit.
+The source archive is checked against the SHA-256 embedded in PKGBUILD. It is a release-specific snapshot including the Arch packaging and updated documentation; the application version is 0.1.3. The repository template is `packaging/arch/PKGBUILD.in`, and `scripts/prepare-arch-package.py` generates the concrete checksummed files from the current commit.
 
 This is a GitHub download, not an official Arch repository or AUR package. Arch is rolling release software; the package is tested against the build-time repository state and may need rebuilding after system library changes. CI checks package installation, native-window startup under Xvfb, audio import, DC/fade WAV generation and embedded UI assets. Physical sound output, deck recording, and every desktop/Wayland combination are not covered by these checks.
 
@@ -228,7 +234,7 @@ For development, install Xcode Command Line Tools and Rust stable, then run:
 ```sh
 cargo run --release --features desktop --bin cassette-studio-desktop --locked
 # Package the current Mac architecture:
-sh scripts/package-public-macos.sh 0.1.2
+sh scripts/package-public-macos.sh 0.1.3
 ```
 
 Apple Silicon and Intel packages are built separately. `scripts/test-macos-package.py` tests the packaged native app and browser executable using synthetic audio and a temporary library. These checks do not replace physical playback/recording tests.
@@ -259,6 +265,7 @@ node scripts/test-tape-settings.cjs
 node scripts/test-downloads.cjs
 node scripts/test-reference-tone.cjs
 node scripts/test-entry-fit.cjs
+node scripts/test-frontend-startup.cjs
 ```
 
 With FFmpeg available in `tools/` or set using `CASSETTE_FFMPEG`, build the CLI debug binary with `cargo build --locked`, then run:
@@ -268,6 +275,7 @@ node scripts/smoke-test.mjs
 node scripts/test-batch.mjs
 node scripts/test-loudness.mjs
 node scripts/test-dc.mjs
+node scripts/test-dat-settings.mjs
 ```
 
 Tests generate synthetic media under `work/` and use isolated libraries. Coverage includes silence trimming, continuation, fades, WAV length, loudness/peak protection, batch arrangement, persistence, HTTP Range and overflow rejection.
@@ -278,4 +286,8 @@ Tests generate synthetic media under `work/` and use isolated libraries. Coverag
 
 ## Building public release packages
 
-Use `scripts/package-public-windows.ps1` on Windows, `scripts/package-public-linux.sh` after building the Linux binaries, and `scripts/package-public-macos.sh` on each Mac architecture. These create application-only packages under `dist/releases/v0.1.2/`. Python 3 is required to collect exact dependency notices; keep the copyright files supplied with the Rust toolchain available. The separate `package-windows.ps1` and `package-linux.sh` helpers create local bundles with external tools and are not used for the public release.
+Use `scripts/package-public-windows.ps1` on Windows, `scripts/package-public-linux.sh` after building the Linux binaries, and `scripts/package-public-macos.sh` on each Mac architecture. These create application-only packages under `dist/releases/v0.1.3/`. Python 3 is required to collect exact dependency notices; keep the copyright files supplied with the Rust toolchain available. The separate `package-windows.ps1` and `package-linux.sh` helpers create local bundles with external tools and are not used for the public release.
+
+## Source organization
+
+See the [source responsibility guide](docs/architecture.md) for display, button, audio, API and storage files.

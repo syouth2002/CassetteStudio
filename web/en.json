@@ -275,5 +275,14 @@
   "デッキの録音レベルを合わせるための音を出します。": "Plays a tone to help set the deck recording level.",
   "選択した曲を解析します。未選択なら表示中の曲が対象です。再生範囲は変わりません。": "Analyzes selected tracks, or displayed tracks if none are selected. Playback ranges are unchanged.",
   "現在の録音・取り込み設定で、全音源の前後の無音と再生範囲を更新します。曲入りのカセットがある場合は実行できません。": "Updates leading/trailing silence and playback ranges for all sources using the current recording/import settings. Unavailable while any cassette contains tracks.",
-  "画面の表示言語を選びます。初回は動作環境に合わせて自動選択します。": "Choose the interface language. On first use, it follows your system language."
+  "画面の表示言語を選びます。初回は動作環境に合わせて自動選択します。": "Choose the interface language. On first use, it follows your system language.",
+  "A/B各面の先頭無音（秒）": "Leading silence on each side A/B (seconds)",
+  "A面・B面の先頭に同じ長さの無音を入れます。テープの録音時間に含まれます。": "Adds the same leading silence to sides A and B, within the tape recording time.",
+  "WAV出力形式（DAT向け）": "WAV output format (for DAT)",
+  "未設定": "Not set",
+  "DAT向けのWAV出力設定です。未設定は従来どおり16bit / 44.1kHzで出力します。": "WAV output settings for DAT use. Not set keeps the existing 16-bit / 44.1 kHz format.",
+  "先頭の無音の値が範囲外です": "Leading silence is out of range",
+  "先頭の無音が片面の長さを超えています": "Leading silence exceeds the side length",
+  "先頭の無音は0.5秒刻みで指定してください": "Set leading silence in 0.5-second increments",
+  "WAVのサンプリングレートは未設定・44100・48000から選択してください": "Choose not set, 44100 or 48000 for the WAV sample rate"
 }

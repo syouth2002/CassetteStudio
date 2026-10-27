@@ -2,7 +2,7 @@
 # Build a native-architecture app; external audio tools remain separate.
 set -eu
 project=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-version=${1:-0.1.2}
+version=${1:-0.1.3}
 case $(uname -m) in arm64) arch=arm64; target=aarch64-apple-darwin;; x86_64) arch=x64; target=x86_64-apple-darwin;; *) exit 1;; esac
 release="$project/dist/releases/v$version"
 stage="$release/macos-$arch"
@@ -21,7 +21,7 @@ cp target/release/cassette-studio-desktop "$app/Contents/MacOS/CassetteStudio"
 cp target/release/cassette-studio "$stage/cassette-studio-browser"
 cp README.md README.ja.md LICENSE THIRD_PARTY_NOTICES.md "$stage/"
 cp -r docs/screenshots "$stage/docs/"
-cp docs/dolby-b-c-research.ja.md "$stage/docs/"
+cp docs/*.md "$stage/docs/"
 python3 scripts/collect-licenses.py --target "$target" --output "$stage/licenses"
 iconset="$release/cassette-$arch.iconset"
 mkdir -p "$iconset"

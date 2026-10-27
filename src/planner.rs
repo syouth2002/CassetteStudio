@@ -73,7 +73,7 @@ pub fn plan(
     }
     let mut sides: [Vec<Entry>; 2] = [vec![], vec![]];
     for side in 0..2 {
-        let remaining = s.side_seconds - side_duration(&sides[side], s.gap);
+        let remaining = s.content_seconds() - side_duration(&sides[side], s.gap);
         let chosen = if optimize {
             select(&pool, remaining, s.gap, !sides[side].is_empty())
         } else {
@@ -100,7 +100,7 @@ pub fn plan(
         for &i in chosen.iter().rev() {
             pool.remove(i);
         }
-        let room = s.side_seconds - side_duration(&sides[side], s.gap);
+        let room = s.content_seconds() - side_duration(&sides[side], s.gap);
         let available = room - if sides[side].is_empty() { 0.0 } else { s.gap };
         if room + 1e-8 >= s.fill_threshold && available > 0.0 && !pool.is_empty() {
             let t = pool.remove(0);
@@ -116,8 +116,8 @@ pub fn plan(
                         next.duration = t.audible() - next.offset;
                         next.fade_in = s.fade.min(next.duration);
                     }
-                    if next.duration > s.side_seconds {
-                        next.duration = s.side_seconds;
+                    if next.duration > s.content_seconds() {
+                        next.duration = s.content_seconds();
                         next.fade_out = s.fade.min(next.duration);
                         next.fade_in = next.fade_in.min(next.duration);
                     }
@@ -230,7 +230,7 @@ pub fn validate_entries(
 ) -> Result<(), String> {
     s.validate()?;
     for side in sides {
-        if side_duration(side, s.gap) > s.side_seconds + 0.001 {
+        if side_duration(side, s.gap) > s.content_seconds() + 0.001 {
             return Err("片面の時間を超えています。曲を移動するか、再配置してください".into());
         }
         for e in side {
@@ -282,6 +282,29 @@ mod tests {
         let p = plan(&t, &["a".into(), "b".into()], &s, true).unwrap();
         assert_eq!(side_duration(&p[0], s.gap), 100.0);
         assert_eq!(p[0][0].duration, 40.0);
+    }
+
+    #[test]
+    fn leading_silence_is_reserved_on_both_sides_and_continuations() {
+        let tracks = vec![track("a", 12.0)];
+        let s = Settings {
+            side_seconds: 10.0,
+            lead_in: 2.5,
+            fill_threshold: 0.0,
+            continuation: "resume".into(),
+            rewind: 0.0,
+            ..Settings::default()
+        };
+        for optimize in [false, true] {
+            let sides = plan(&tracks, &["a".into()], &s, optimize).unwrap();
+            assert_eq!(sides[0][0].duration, 7.5);
+            assert_eq!(sides[1][0].offset, 7.5);
+            assert_eq!(sides[1][0].duration, 4.5);
+            validate_entries(&sides, &tracks, &s).unwrap();
+            let mut overflow = sides;
+            overflow[0][0].duration = 8.0;
+            assert!(validate_entries(&overflow, &tracks, &s).is_err());
+        }
     }
     fn blank(id: &str, seconds: f64) -> Collection {
         Collection {

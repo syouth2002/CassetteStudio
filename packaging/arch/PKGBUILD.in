@@ -1,6 +1,6 @@
 # Generated PKGBUILD downloads a checksummed source snapshot from this release.
 pkgname=cassette-studio
-pkgver=0.1.2
+pkgver=0.1.3
 pkgrel=1
 pkgdesc='Cassette mixtape editor and recording preparation'
 arch=('x86_64')

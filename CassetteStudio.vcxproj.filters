@@ -1,0 +1,121 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Rust">
+      <UniqueIdentifier>{A030B19C-396A-5F7D-8732-332C034609C1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Rust\Audio">
+      <UniqueIdentifier>{B14F70E2-08E5-5D20-8FA8-84279F726326}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Rust\Server">
+      <UniqueIdentifier>{1BD35049-7B6D-5730-B354-3A9D2754C748}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Rust\Desktop">
+      <UniqueIdentifier>{7C921A7F-EE76-5D88-8050-DD1F96D39A56}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Web">
+      <UniqueIdentifier>{0DC0946E-FDDF-54B2-A6DB-F563847CB990}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Web\Structure">
+      <UniqueIdentifier>{5F448DD3-02EF-55B4-B958-7682F77AE588}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Web\Display">
+      <UniqueIdentifier>{8247C896-1C7B-59FD-AB78-22E806397D10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Web\Startup">
+      <UniqueIdentifier>{6FB6C7B5-8CA8-5A0C-89B9-911355D5E4BC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Web\Language">
+      <UniqueIdentifier>{35B0A63D-9F60-5E34-B4A2-60D3E5B1BE28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Web\Features">
+      <UniqueIdentifier>{50CB56AC-672F-52B4-B47A-A5565F4616F4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Web\Buttons">
+      <UniqueIdentifier>{4357E9D2-E3E2-5CDC-B246-FE10D3F05FEA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Web\Audio">
+      <UniqueIdentifier>{37E595F9-7512-5E58-AC00-A9CE62899775}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Docs">
+      <UniqueIdentifier>{C39F92FB-76E7-599D-8118-CF97AE8C4EAF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scripts">
+      <UniqueIdentifier>{5EB031CF-C30D-5026-9310-3D794E6261E2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\*.rs">
+      <Filter>Rust</Filter>
+    </None>
+    <None Include="src\audio\*.rs">
+      <Filter>Rust\Audio</Filter>
+    </None>
+    <None Include="src\server\*.rs">
+      <Filter>Rust\Server</Filter>
+    </None>
+    <None Include="src\bin\*.rs">
+      <Filter>Rust\Desktop</Filter>
+    </None>
+    <None Include="web\*.html">
+      <Filter>Web\Structure</Filter>
+    </None>
+    <None Include="web\*.css">
+      <Filter>Web\Display</Filter>
+    </None>
+    <None Include="web\js\view.js">
+      <Filter>Web\Display</Filter>
+    </None>
+    <None Include="web\app.js">
+      <Filter>Web\Startup</Filter>
+    </None>
+    <None Include="web\i18n.js">
+      <Filter>Web\Language</Filter>
+    </None>
+    <None Include="web\en.json">
+      <Filter>Web\Language</Filter>
+    </None>
+    <None Include="web\js\api.js">
+      <Filter>Web\Features</Filter>
+    </None>
+    <None Include="web\js\cassette.js">
+      <Filter>Web\Features</Filter>
+    </None>
+    <None Include="web\js\core.js">
+      <Filter>Web\Features</Filter>
+    </None>
+    <None Include="web\js\dialogs.js">
+      <Filter>Web\Features</Filter>
+    </None>
+    <None Include="web\js\export.js">
+      <Filter>Web\Features</Filter>
+    </None>
+    <None Include="web\js\library.js">
+      <Filter>Web\Features</Filter>
+    </None>
+    <None Include="web\js\settings.js">
+      <Filter>Web\Features</Filter>
+    </None>
+    <None Include="web\js\state.js">
+      <Filter>Web\Features</Filter>
+    </None>
+    <None Include="web\js\buttons\*.js">
+      <Filter>Web\Buttons</Filter>
+    </None>
+    <None Include="web\js\audio\*.js">
+      <Filter>Web\Audio</Filter>
+    </None>
+    <None Include="README.md">
+      <Filter>Docs</Filter>
+    </None>
+    <None Include="README.ja.md">
+      <Filter>Docs</Filter>
+    </None>
+    <None Include="docs\architecture*.md">
+      <Filter>Docs</Filter>
+    </None>
+    <None Include="scripts\*">
+      <Filter>Scripts</Filter>
+    </None>
+  </ItemGroup>
+</Project>

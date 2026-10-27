@@ -1,4 +1,4 @@
-param([string]$Version = '0.1.2')
+param([string]$Version = '0.1.3')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Push-Location -LiteralPath $root
@@ -15,7 +15,7 @@ try {
     '@echo off', 'powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\setup-tools.ps1"', 'pause' | Set-Content "$stage\SetupAudioTools.cmd" -Encoding ascii
     'Portable library: data/ beside the application.' | Set-Content "$stage\portable.txt" -Encoding ascii
     foreach ($file in @('README.md','README.ja.md','LICENSE','THIRD_PARTY_NOTICES.md')) { Copy-Item -LiteralPath $file -Destination $stage }
-    Copy-Item docs\dolby-b-c-research.ja.md "$stage\docs\dolby-b-c-research.ja.md"
+    Copy-Item docs\*.md "$stage\docs"
     Copy-Item docs\screenshots "$stage\docs\screenshots" -Recurse
     & python scripts\collect-licenses.py --target x86_64-pc-windows-msvc --output "$stage\licenses"
     if ($LASTEXITCODE -ne 0) { throw 'License collection failed.' }

@@ -1,12 +1,12 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const source=fs.readFileSync('web/app.js','utf8');
+const source=fs.readFileSync('web/js/export.js','utf8');
 const a={id:'a',name:'Tape A',kind:'cassette',sides:[[],[]],settings:{side_seconds:1800}};
 const b={...a,id:'b',name:'Tape B',settings:{side_seconds:2400}};
 let current=a;
 const downloads={innerHTML:'',replaceChildren(){this.innerHTML='';}};
 const ctx={current:()=>current,lib:{tracks:[]},downloadCaches:new Map(),$:()=>downloads,esc:String,csText:(s,...v)=>s.replace(/\{(\d+)\}/g,(_,i)=>v[i])};
 vm.createContext(ctx);
-for(const name of ['showDownloads','syncDownloads'])vm.runInContext(source.match(new RegExp('function '+name+'\\([^\\n]+'))[0],ctx);
+vm.runInContext(source,ctx);
 const cache=c=>({collection:c.id,name:c.name,key:JSON.stringify([c.id,c.name,c.sides,c.settings,[]]),urls:[`/${c.id}-A.wav`,`/${c.id}-B.wav`]});
 ctx.showDownloads(cache(a));assert.match(downloads.innerHTML,/a-A.wav/);
 current=b;ctx.syncDownloads();assert.equal(downloads.innerHTML,'');

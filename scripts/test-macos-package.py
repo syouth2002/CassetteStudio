@@ -38,13 +38,18 @@ with tempfile.TemporaryDirectory(prefix='cassette-macos-') as folder:
                 request=urllib.request.Request(base+'/api/import',data=body,headers={'Content-Type':f'multipart/form-data; boundary={boundary}'})
                 result=json.load(urllib.request.urlopen(request,timeout=60));assert not result['errors'],result
                 track=result['tracks'][0]
-                settings={'side_seconds':2,'gap':0,'fade':.5,'remove_dc':True}
                 entry={'track_id':track['id'],'offset':0,'duration':.8,'fade_in':0,'fade_out':.5,'continuation':False}
-                request=urllib.request.Request(base+'/api/render',data=json.dumps({'sides':[[entry],[]],'settings':settings}).encode(),headers={'Content-Type':'application/json'})
-                rendered=json.load(urllib.request.urlopen(request,timeout=60))
-                data=urllib.request.urlopen(base+rendered['urls'][0]).read()
-                assert data[:4]==b'RIFF' and len(data)==44+2*44100*4
-                print('PASS:',executable.name,status['version'],'startup, import, DC/fade WAV, embedded UI')
+                for rate in [None,44100,48000]:
+                    settings={'side_seconds':2,'gap':0,'fade':.5,'remove_dc':True,'lead_in':.5,'wav_sample_rate':rate}
+                    request=urllib.request.Request(base+'/api/render',data=json.dumps({'sides':[[entry],[entry]],'settings':settings}).encode(),headers={'Content-Type':'application/json'})
+                    rendered=json.load(urllib.request.urlopen(request,timeout=60))
+                    for url in rendered['urls']:
+                        data=urllib.request.urlopen(base+url).read()
+                        actual=rate or 44100
+                        assert data[:4]==b'RIFF' and len(data)==44+2*actual*4
+                        assert struct.unpack_from('<I',data,24)[0]==actual
+                        assert not any(data[44:44+actual*2]),'Leading silence missing'
+                print('PASS:',executable,'startup, import, DC/fade WAV, A/B leading silence, DAT formats, embedded UI')
             finally:
                 process.terminate()
                 try:process.wait(timeout=15)
