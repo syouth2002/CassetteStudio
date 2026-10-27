@@ -25,6 +25,9 @@ jobs:
           su builder -c "cd '$PWD' && makepkg --noconfirm"
       - name: Install package and verify contents
         run: |
+          # The minimal Docker image excludes /usr/share/doc by default.
+          # Verify our shipped documentation as well as the executable files.
+          sed -i '/^[[:space:]]*NoExtract[[:space:]]*=/d' /etc/pacman.conf
           pacman -U --noconfirm dist/arch/cassette-studio-0.1.2-1-x86_64.pkg.tar.zst
           pacman -Qkk cassette-studio
           test -f /usr/share/doc/cassette-studio/docs/screenshots/options-ja.jpg
@@ -33,6 +36,7 @@ jobs:
       - name: Native app and audio smoke test
         run: su builder -c "cd '$GITHUB_WORKSPACE' && dbus-run-session -- xvfb-run -a python scripts/test-arch-package.py"
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: arch-x86_64
           path: |
