@@ -2,16 +2,14 @@
 // Shared application state. Loaded before features; no event handlers are registered here.
 const defaults = {
   side_seconds: 1800,
-  length_correction: 0,
   gap: 2,
   lead_in: 0,
   wav_sample_rate: null,
   fill_threshold: 30,
   fade: 5,
   continuation: "restart",
-  rewind: 3,
   silence_db: -50,
-  silence_min: 0.2,
+  silence_min: 0.5,
   normalize: false,
   remove_dc: false,
   target_lufs: -18,

@@ -1,5 +1,8 @@
 //! HTTP request validation and application operations.
-use super::state::{Api, App, Error};
+use super::{
+    imports::{PendingSource, file_identity},
+    state::{Api, App, Error},
+};
 use crate::{audio, model::*, planner};
 use axum::{
     Json, Router,
@@ -7,7 +10,7 @@ use axum::{
     routing::{delete, get, post, put},
 };
 use serde::Deserialize;
-use std::fs;
+use sha2::{Digest, Sha256};
 use tokio::io::AsyncWriteExt;
 use tower_http::services::ServeDir;
 
@@ -26,6 +29,7 @@ pub(super) fn routes(root: &std::path::Path) -> Router<App> {
         .route("/api/reanalyze", put(reanalyze))
         .route("/api/loudness", post(loudness))
         .route("/api/tracks/{id}/gain", put(manual_gain))
+        .route("/api/tracks", delete(remove_tracks))
         .nest_service("/media", ServeDir::new(root.join("preview")))
         .nest_service("/exports", ServeDir::new(root.join("exports")))
 }
@@ -42,7 +46,10 @@ async fn status(State(app): State<App>) -> Api<serde_json::Value> {
 }
 
 async fn import(State(app): State<App>, mut multi: Multipart) -> Api<serde_json::Value> {
+    let _import_guard = app.imports.lock().await;
     let mut settings = Settings::default();
+    let mut duplicates = vec![];
+    let mut imported_ids = vec![];
     let mut added = vec![];
     let mut errors = vec![];
     while let Some(mut field) = multi.next_field().await.map_err(|e| Error(e.to_string()))? {
@@ -60,38 +67,59 @@ async fn import(State(app): State<App>, mut multi: Multipart) -> Api<serde_json:
             .unwrap_or("audio")
             .replace(['\\', '/'], "_");
         let id = uuid::Uuid::new_v4().to_string();
-        let path = app.root.join("sources").join(&id);
+        let mut pending = PendingSource::new(app.root.join("incoming").join(&id));
+        let path = pending.path.clone();
+        let mut digest = Sha256::new();
+        let mut size = 0u64;
         let mut f = tokio::fs::File::create(&path)
             .await
             .map_err(|e| Error(e.to_string()))?;
         while let Some(chunk) = field.chunk().await.map_err(|e| Error(e.to_string()))? {
+            digest.update(&chunk);
+            size += chunk.len() as u64;
             f.write_all(&chunk)
                 .await
                 .map_err(|e| Error(e.to_string()))?;
         }
+        f.flush().await.map_err(|e| Error(e.to_string()))?;
         drop(f);
-        let p = path.clone();
-        let name = filename.clone();
-        let s = settings.clone();
-        match app
-            .work(move || audio::analyze(&p, id, name, "local".into(), &s))
-            .await
-        {
-            Ok(t) => {
-                app.update(|lib| {
-                    lib.tracks.push(t.clone());
-                    Ok(())
-                })?;
-                added.push(t);
+        let hash = format!("sha256:{:x}", digest.finalize());
+        let result: Result<Option<Track>, Error> = async {
+            if let Some(existing) = app.duplicate_file(&hash, size).await? {
+                pending.reuse(&app.root, &existing)?;
+                imported_ids.push(existing.id.clone());
+                duplicates.push(serde_json::json!({"filename":filename,"track":existing}));
+                return Ok(None);
             }
-            Err(e) => {
-                let _ = fs::remove_file(path);
-                errors.push(format!("{filename}: {}", e.0));
-            }
+            let p = path.clone();
+            let name = filename.clone();
+            let source_id = id.clone();
+            let s = settings.clone();
+            let mut t = app
+                .work(move || audio::analyze(&p, source_id, name, "local".into(), &s))
+                .await?;
+            t.content_hash = Some(hash);
+            pending.move_to(app.root.join("sources").join(&id))?;
+            app.update(|lib| {
+                lib.tracks.push(t.clone());
+                Ok(())
+            })?;
+            pending.commit();
+            imported_ids.push(t.id.clone());
+            Ok(Some(t))
+        }
+        .await;
+        match result {
+            Ok(Some(t)) => added.push(t),
+            Ok(None) => {}
+            Err(e) => errors.push(format!("{filename}: {}", e.0)),
         }
     }
-    Ok(Json(serde_json::json!({"tracks":added,"errors":errors})))
+    Ok(Json(
+        serde_json::json!({"tracks":added,"duplicates":duplicates,"track_ids":imported_ids,"errors":errors}),
+    ))
 }
+
 #[derive(Deserialize)]
 struct UrlRequest {
     url: String,
@@ -99,16 +127,27 @@ struct UrlRequest {
 }
 async fn import_url(State(app): State<App>, Json(body): Json<UrlRequest>) -> Api<Track> {
     body.settings.validate()?;
+    let _import_guard = app.imports.lock().await;
     let root = app.root.clone();
-    let t = app
+    let mut t = app
         .work(move || audio::import_url(&root, &body.url, &body.settings))
         .await?;
+    let mut pending = PendingSource::new(app.root.join("sources").join(&t.id));
+    let path = pending.path.clone();
+    let (hash, size) = app.work(move || file_identity(&path)).await?;
+    if let Some(existing) = app.duplicate_file(&hash, size).await? {
+        pending.reuse(&app.root, &existing)?;
+        return Ok(Json(existing));
+    }
+    t.content_hash = Some(hash);
     app.update(|lib| {
         lib.tracks.push(t.clone());
         Ok(())
     })?;
+    pending.commit();
     Ok(Json(t))
 }
+
 async fn save_collection(State(app): State<App>, Json(mut c): Json<Collection>) -> Api<Collection> {
     c.settings.validate()?;
     if !["playlist", "cassette"].contains(&c.kind.as_str())
@@ -156,6 +195,36 @@ async fn remove_collection(
         Ok(())
     })?;
     Ok(Json(serde_json::json!({"ok":true})))
+}
+#[derive(Deserialize)]
+struct DeleteTracksRequest {
+    tracks: Vec<String>,
+}
+async fn remove_tracks(
+    State(app): State<App>,
+    Json(body): Json<DeleteTracksRequest>,
+) -> Api<Library> {
+    if body.tracks.is_empty() {
+        return Err(Error("削除する曲を選択してください".into()));
+    }
+    if body.tracks.len() > 5000 {
+        return Err(Error("一度に削除できる曲は5000曲までです".into()));
+    }
+    // Serialize deletion with duplicate lookup and registration.
+    let _import_guard = app.imports.lock().await;
+    let ids: std::collections::HashSet<_> = body.tracks.into_iter().collect();
+    let library = app.update(|lib| {
+        lib.tracks.retain(|track| !ids.contains(&track.id));
+        for collection in &mut lib.collections {
+            collection.tracks.retain(|id| !ids.contains(id));
+            for side in &mut collection.sides {
+                side.retain(|entry| !ids.contains(&entry.track_id));
+            }
+        }
+        Ok(lib.clone())
+    })?;
+    // Keep the user's source files and the application's imported copies intact.
+    Ok(Json(library))
 }
 #[derive(Deserialize)]
 struct PlanRequest {
@@ -318,39 +387,56 @@ async fn manual_gain(
     })?;
     Ok(Json(track))
 }
-async fn reanalyze(State(app): State<App>, Json(s): Json<Settings>) -> Api<Library> {
-    s.validate()?;
+#[derive(Deserialize)]
+struct ReanalyzeRequest {
+    tracks: Vec<String>,
+    settings: Settings,
+}
+async fn reanalyze(State(app): State<App>, Json(body): Json<ReanalyzeRequest>) -> Api<Library> {
+    body.settings.validate()?;
+    if body.tracks.is_empty() {
+        return Err(Error("無音を再解析する曲を選択してください".into()));
+    }
+    if body.tracks.len() > 2000 {
+        return Err(Error("一度に解析できる曲は2000曲までです".into()));
+    }
     let lib = app.snapshot()?;
-    if lib
-        .collections
-        .iter()
-        .any(|c| c.kind == "cassette" && !c.sides.iter().all(Vec::is_empty))
-    {
-        return Err(Error("カセット作成後の一括再解析は既存の再生範囲に影響します。先にカセットを削除してください".into()));
+    let mut seen = std::collections::HashSet::new();
+    let mut originals = Vec::new();
+    for id in body.tracks {
+        if !seen.insert(id.clone()) {
+            continue;
+        }
+        originals.push(
+            lib.tracks
+                .iter()
+                .find(|t| t.id == id)
+                .ok_or_else(|| Error("曲が見つかりません".into()))?
+                .clone(),
+        );
     }
     let root = app.root.clone();
     let tracks = app
         .work(move || {
-            lib.tracks
+            originals
                 .into_iter()
-                .map(|t| {
-                    audio::analyze(
-                        &root.join("sources").join(&t.id),
-                        t.id,
-                        t.filename,
-                        t.source,
-                        &s,
-                    )
+                .map(|old| {
+                    let analyzed = audio::analyze(
+                        &root.join("sources").join(&old.id),
+                        old.id.clone(),
+                        old.filename.clone(),
+                        old.source.clone(),
+                        &body.settings,
+                    )?;
+                    Ok((old, analyzed))
                 })
-                .collect::<Result<Vec<_>, _>>()
+                .collect::<Result<Vec<_>, String>>()
         })
         .await?;
+    // Publish all measurements and entry updates together, or leave the library untouched.
     app.update(|lib| {
-        for mut t in tracks {
-            if let Some(old) = lib.tracks.iter_mut().find(|v| v.id == t.id) {
-                t.manual_gain_db = old.manual_gain_db;
-                *old = t;
-            }
+        for (original, analyzed) in tracks {
+            lib.replace_analyzed_track(&original, analyzed)?;
         }
         Ok(())
     })?;

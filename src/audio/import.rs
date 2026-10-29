@@ -62,6 +62,7 @@ pub fn analyze(
         artist: repair_legacy_tag(tags["artist"].as_str().unwrap_or("")),
         filename,
         source,
+        content_hash: None,
         duration,
         trim_start,
         trim_end,

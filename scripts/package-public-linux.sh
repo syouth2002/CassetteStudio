@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 project=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-version=${1:-0.1.3}
+version=${1:-0.1.4}
 release="$project/dist/releases/v$version"
 stage="$release/linux-x64"
 test ! -e "$stage" || { echo "Stage already exists: $stage" >&2; exit 1; }

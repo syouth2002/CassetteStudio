@@ -274,12 +274,22 @@ main {
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 32px 38px;
+  padding: 0 38px 32px;
 }
 .page-heading {
+  padding-top: 32px;
+  margin-bottom: 22px;
+}
+.collection-title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+.collection-title-row h1 {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .eyebrow {
   font-size: 10px;
@@ -288,7 +298,7 @@ main {
   font-weight: 600;
 }
 h1 {
-  font-size: 31px;
+  font-size: 21px;
   letter-spacing: -0.7px;
   margin: 5px 0 4px;
   font-weight: 600;
@@ -298,22 +308,21 @@ h1 {
   color: var(--muted);
   font-size: 12px;
 }
+.heading-buttons,
+.recording-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .heading-buttons {
-  display: flex;
-  gap: 8px;
-}
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 26px 0 22px;
-}
-.toolbar > div {
-  display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .list-heading {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--bg);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -345,6 +354,13 @@ table {
   border-collapse: collapse;
   text-align: left;
   table-layout: fixed;
+}
+thead {
+  position: sticky;
+  top: var(--track-controls-height, 48px);
+  z-index: 2;
+  background: var(--bg);
+  box-shadow: 0 1px var(--line);
 }
 th {
   font-size: 10px;
@@ -466,7 +482,7 @@ tr.drag-over {
   margin-bottom: 22px;
 }
 .side-card {
-  padding: 18px 20px;
+  padding: 10px 16px;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -483,13 +499,13 @@ tr.drag-over {
 .side-card p {
   font-size: 11px;
   color: var(--muted);
-  margin: 8px 0 0;
+  margin: 5px 0 0;
 }
 .bar {
   height: 6px;
   border-radius: 5px;
   background: #e6e8df;
-  margin-top: 15px;
+  margin-top: 8px;
   overflow: hidden;
 }
 .bar > div {
@@ -752,14 +768,19 @@ label select {
 }
 @media (max-width: 1100px) {
   main {
-    padding: 25px 22px;
+    padding: 0 22px 25px;
+  }
+  .page-heading {
+    padding-top: 25px;
   }
   aside {
     width: 210px;
   }
-  .toolbar {
-    flex-direction: column;
-    gap: 10px;
+  .header-actions {
+    gap: 8px;
+  }
+  #tool-status {
+    display: none;
   }
   th:last-child {
     width: 125px;
@@ -787,20 +808,27 @@ label select {
     padding: 15px 8px;
   }
   main {
-    padding: 20px 14px;
+    padding: 0 14px 20px;
+  }
+  .page-heading {
+    padding-top: 20px;
   }
   .workspace {
     height: calc(100vh - 182px);
   }
   h1 {
-    font-size: 24px;
+    font-size: 18px;
   }
   .page-heading {
     align-items: flex-start;
     gap: 10px;
   }
   .heading-buttons {
-    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .header-actions button {
+    font-size: 11px;
+    padding: 8px;
   }
   .player {
     padding: 14px;
@@ -837,7 +865,7 @@ label select {
     letter-spacing: 1px;
   }
   .side-card {
-    padding: 12px;
+    padding: 8px 12px;
   }
   .side-card .side-title {
     font-size: 10px;
@@ -848,7 +876,7 @@ label select {
   .collection-item {
     padding: 8px 5px;
   }
-  .toolbar button {
+  .heading-buttons button {
     font-size: 11px;
     padding: 8px;
   }
@@ -922,4 +950,22 @@ label select {
     grid-template-columns: 1fr;
     gap: 8px;
   }
+}
+
+.side-length-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: #67756a;
+}
+.side-length-inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+}
+.side-length-inputs input {
+  width: 100%;
+  min-width: 0;
 }

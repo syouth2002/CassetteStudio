@@ -2,7 +2,7 @@
 # Build a native-architecture app; external audio tools remain separate.
 set -eu
 project=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-version=${1:-0.1.3}
+version=${1:-0.1.4}
 case $(uname -m) in arm64) arch=arm64; target=aarch64-apple-darwin;; x86_64) arch=x64; target=x86_64-apple-darwin;; *) exit 1;; esac
 release="$project/dist/releases/v$version"
 stage="$release/macos-$arch"

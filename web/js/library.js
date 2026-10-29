@@ -104,24 +104,45 @@ async function importFiles(files) {
       const r = await fetch("/api/import", { method: "POST", body: form });
       const data = await r.json();
       if (!r.ok) throw Error(data.error || csText("取り込みに失敗しました"));
-      lib.tracks.push(...data.tracks);
-      const skipped = await attachTracks(
-        data.tracks.map((t) => t.id),
+      const duplicates = data.duplicates || [];
+      for (const t of [...data.tracks, ...duplicates.map((d) => d.track)])
+        if (!lib.tracks.some((old) => old.id === t.id)) lib.tracks.push(t);
+      const skipped = await attachImportedTracks(
+        data.track_ids || [
+          ...data.tracks.map((t) => t.id),
+          ...duplicates.map((d) => d.track.id),
+        ],
         destination,
       );
       draw();
-      if (!skipped)
-        toast(
-          data.errors.length
-            ? csText(
-                "{0}件を追加。\n{1}",
-                data.tracks.length,
-                data.errors.join("\n"),
-              )
-            : csText("{0}件の音源を追加しました", data.tracks.length),
-        );
+      let message = duplicates.length
+        ? csText(
+            "{0}件を新規追加、登録済み{1}件は重複登録しませんでした",
+            data.tracks.length,
+            duplicates.length,
+          )
+        : csText("{0}件の音源を追加しました", data.tracks.length);
+      if (skipped)
+        message +=
+          "\n" +
+          csText(
+            "残り時間がないため、{0}曲をカセットに追加できませんでした。音源はライブラリに残っています。",
+            skipped,
+          );
+      if (data.errors.length) message += "\n" + data.errors.join("\n");
+      toast(message);
     },
   );
+}
+// File/URL imports reuse existing sources without inserting the same track twice in the target.
+async function attachImportedTracks(ids, destination = active) {
+  const c = lib.collections.find((c) => c.id === destination);
+  if (!c) return 0;
+  const existing = new Set(
+    c.kind === "playlist" ? c.tracks : c.sides.flat().map((e) => e.track_id),
+  );
+  const unique = [...new Set(ids)].filter((id) => !existing.has(id));
+  return unique.length ? attachTracks(unique, destination) : 0;
 }
 async function attachTracks(ids, destination = active) {
   const c = lib.collections.find((c) => c.id === destination);

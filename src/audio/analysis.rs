@@ -12,23 +12,30 @@ pub(super) fn detect_silence(
     s: &Settings,
     offset: Option<[f64; 2]>,
 ) -> Result<(f64, f64), String> {
-    let prefix = offset
+    let correction = offset
         .map(dc_filter)
         .transpose()?
-        .map(|f| format!("{STEREO},{f},"))
+        .map(|f| format!("{f},"))
         .unwrap_or_default();
+    // Count decoded samples in the same pass; container duration can include padding/video.
     let filter = format!(
-        "{prefix}silencedetect=noise={}dB:d={}",
+        "{STEREO},asetpts=PTS-STARTPTS,{correction}silencedetect=noise={}dB:d={},astats=metadata=0:reset=0:measure_perchannel=none:measure_overall=Number_of_samples",
         s.silence_db, s.silence_min
     );
     let o = run(command("ffmpeg")
         .args(["-hide_banner", "-nostdin", "-i"])
         .arg(path)
         .args(["-map", "0:a:0", "-af", &filter, "-f", "null", "-"]))?;
-    Ok(silence_bounds(
-        &String::from_utf8_lossy(&o.stderr),
-        duration,
-    ))
+    let log = String::from_utf8_lossy(&o.stderr);
+    let decoded_duration = log
+        .lines()
+        .filter_map(|line| line.split_once("Number of samples: "))
+        .filter_map(|(_, value)| value.trim().parse::<u64>().ok())
+        .next_back()
+        .map(|samples| samples as f64 / 44100.0)
+        .filter(|seconds| *seconds > 0.0)
+        .unwrap_or(duration);
+    Ok(silence_bounds(&log, decoded_duration))
 }
 pub fn measure_loudness(path: &Path, t: &Track) -> Result<Loudness, String> {
     measure_loudness_with_dc(path, t, None)
@@ -136,10 +143,10 @@ pub(super) fn silence_bounds(log: &str, duration: f64) -> (f64, f64) {
             .and_then(|v| v.parse::<f64>().ok())
             && let Some(a) = open.take()
         {
-            if a <= 0.025 {
+            if a <= 1.0 / 44100.0 {
                 start = v.min(duration);
             }
-            if v >= duration - 0.025 {
+            if v >= duration - 1.0 / 44100.0 {
                 end = a.max(0.0);
             }
         }

@@ -5,7 +5,7 @@ See [the Japanese guide](architecture.ja.md) for a complete file-by-file table.
 ## Rust
 
 - `src/lib.rs`: the shared public startup API.
-- `src/server/`: lifecycle and route composition (`mod.rs`), embedded resources (`assets.rs`), HTTP operations (`api.rs`), library ownership/persistence/job coordination (`state.rs`), and origin checks (`security.rs`).
+- `src/server/`: lifecycle and route composition (`mod.rs`), embedded resources (`assets.rs`), HTTP operations (`api.rs`), library ownership/persistence/job coordination (`state.rs`), file identity/legacy lookup/upload cleanup (`imports.rs`), and origin checks (`security.rs`).
 - `src/audio/`: a small facade (`mod.rs`), external tools (`tools.rs`), tag recovery (`metadata.rs`), media ingestion (`import.rs`), measurements (`analysis.rs`), DC/gain filters and preview identity (`processing.rs`), WAV/preview generation (`render.rs`), and unit tests (`tests.rs`).
 - `src/model.rs`: persisted data types and setting validation.
 - `src/planner.rs`: cassette arrangement and capacity checks.

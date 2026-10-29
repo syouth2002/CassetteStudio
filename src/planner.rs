@@ -112,7 +112,7 @@ pub fn plan(
                     let mut next = whole(t);
                     next.continuation = true;
                     if s.continuation == "resume" {
-                        next.offset = (available - s.rewind).max(0.0);
+                        next.offset = available;
                         next.duration = t.audible() - next.offset;
                         next.fade_in = s.fade.min(next.duration);
                     }
@@ -263,6 +263,7 @@ mod tests {
             artist: String::new(),
             filename: String::new(),
             source: String::new(),
+            content_hash: None,
             duration: len + 10.0,
             trim_start: 4.0,
             trim_end: len + 4.0,
@@ -292,7 +293,6 @@ mod tests {
             lead_in: 2.5,
             fill_threshold: 0.0,
             continuation: "resume".into(),
-            rewind: 0.0,
             ..Settings::default()
         };
         for optimize in [false, true] {
@@ -398,8 +398,8 @@ mod tests {
         assert_eq!(p[1][0].duration, 80.0);
         s.continuation = "resume".into();
         let p = plan(&t, &ids, &s, false).unwrap();
-        assert_eq!(p[1][0].offset, 35.0);
-        assert_eq!(p[1][0].duration, 45.0);
+        assert_eq!(p[1][0].offset, 38.0);
+        assert_eq!(p[1][0].duration, 42.0);
         assert_eq!(p[1][0].fade_in, 5.0);
         validate_entries(&p, &t, &s).unwrap();
     }

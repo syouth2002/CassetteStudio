@@ -8,7 +8,7 @@ A Rust application for arranging cassette mixtapes, preparing deck playback, and
 
 Source code and documentation: [MIT](LICENSE). Dependencies and external tools retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
 
-Version 0.1.3 adds leading silence for both tape sides, DAT-oriented WAV formats, and automatic hiding of unsupported output selection. The source is organized by display, controls, audio processing, and server responsibilities.
+Version 0.1.4 improves selected-track reanalysis, duplicate-file detection, library deletion, recording controls and the interface layout. See [release changes](docs/release-notes-0.1.4.md).
 
 ## Download and start
 
@@ -16,12 +16,12 @@ Get the application from [GitHub Releases](https://github.com/syouth2002/Cassett
 
 | Platform | Download | First use |
 | --- | --- | --- |
-| Windows x64 | `CassetteStudio-0.1.3-Windows-x64.zip` | Extract the entire folder, run `SetupAudioTools.cmd` once to obtain FFmpeg/FFprobe and yt-dlp, then run `CassetteStudio.exe`. WebView2 must be installed. |
-| Ubuntu 24.04 x64 | `CassetteStudio-0.1.3-Ubuntu24-amd64.deb` | Run `sudo apt install ./CassetteStudio-0.1.3-Ubuntu24-amd64.deb`, then start Cassette Studio from the app menu. FFmpeg and system runtimes are installed as dependencies. |
-| Linux x64 archive | `CassetteStudio-0.1.3-Linux-Ubuntu24-x64.tar.gz` | Extract and launch `CassetteStudio`. Install FFmpeg, GTK 3, WebKitGTK 4.1, libxdo and D-Bus first. |
-| Arch Linux x86_64 | `cassette-studio-0.1.3-1-x86_64.pkg.tar.zst` | Fully update Arch, then install using `sudo pacman -U ./cassette-studio-0.1.3-1-x86_64.pkg.tar.zst`. |
-| macOS 15+ Apple Silicon | `CassetteStudio-0.1.3-macOS-arm64.zip` | Extract, move `Cassette Studio.app` to Applications and install external tools as described below. |
-| macOS 15+ Intel | `CassetteStudio-0.1.3-macOS-x64.zip` | Same steps; use the Intel archive. |
+| Windows x64 | `CassetteStudio-0.1.4-Windows-x64.zip` | Extract the entire folder, run `SetupAudioTools.cmd` once to obtain FFmpeg/FFprobe and yt-dlp, then run `CassetteStudio.exe`. WebView2 must be installed. |
+| Ubuntu 24.04 x64 | `CassetteStudio-0.1.4-Ubuntu24-amd64.deb` | Run `sudo apt install ./CassetteStudio-0.1.4-Ubuntu24-amd64.deb`, then start Cassette Studio from the app menu. FFmpeg and system runtimes are installed as dependencies. |
+| Linux x64 archive | `CassetteStudio-0.1.4-Linux-Ubuntu24-x64.tar.gz` | Extract and launch `CassetteStudio`. Install FFmpeg, GTK 3, WebKitGTK 4.1, libxdo and D-Bus first. |
+| Arch Linux x86_64 | `cassette-studio-0.1.4-1-x86_64.pkg.tar.zst` | Fully update Arch, then install using `sudo pacman -U ./cassette-studio-0.1.4-1-x86_64.pkg.tar.zst`. |
+| macOS 15+ Apple Silicon | `CassetteStudio-0.1.4-macOS-arm64.zip` | Extract, move `Cassette Studio.app` to Applications and install external tools as described below. |
+| macOS 15+ Intel | `CassetteStudio-0.1.4-macOS-x64.zip` | Same steps; use the Intel archive. |
 
 Release downloads contain the app, bilingual instructions, screenshots and dependency notices. External audio tools are installed separately; they are not bundled in the public release. Windows first-time audio-tool setup needs internet access. For URL imports, install [Node.js 22+](https://nodejs.org/en/download); Linux also needs a current [yt-dlp](https://github.com/yt-dlp/yt-dlp#installation). Local audio imports do not need Node or yt-dlp. Rust is not needed to use these downloads. Check archive integrity against the release's `SHA256SUMS.txt`.
 
@@ -31,14 +31,15 @@ Screenshots show the latest browser interface with fictional demo tracks. The de
 
 - Drag audio or video files into the library; videos use their first audio stream.
 - Create playlists and A/B cassettes; reorder tracks, add/remove them, move them between sides, and edit playback ranges and fades.
-- Choose 46, 60, 74, 80, 90, or 120 minutes, or a custom length. Store a correction in seconds per side for each cassette. C60 with +15 seconds gives 30:15 on each side.
+- Choose 46, 60, 74, 80, 90, or 120 minutes, or a custom length. Enter the actual per-side length as minutes and seconds; for example, 30 min 15 sec on both sides. Existing corrected lengths are preserved.
 - Arrange selected tracks in order, or automatically fill pre-created empty cassettes using their individual settings, without reusing track IDs already present in other cassettes.
 - Exclude leading/trailing silence from track length; preserve silence within a track and insert the configured gap between tracks.
-- Fill sufficiently large remaining space with a track faded out at the side's end. Continue it on side B from the beginning, or from the cut position with a fade-in and optional rewind.
-- Set gaps, fade-in/out, and continuation rewind in 0.5-second increments.
+- Fill sufficiently large remaining space with a track faded out at the side's end. Continue it on side B from the beginning, or from the cut position with a fade-in.
+- Set gaps and fade-in/out in 0.5-second increments.
 - Play/pause/stop, seek, adjust volume, and skip tracks. The text sidebar includes small cassette icons.
-- Export A/B WAV files as 16-bit stereo, padded to corrected capacity. Recording settings offer DAT-oriented 48 kHz and 44.1 kHz output; Unspecified keeps the existing 44.1 kHz format. Save links appear only for the selected cassette's generated audio; editing its contents or settings invalidates them.
-- Prepare playback for a cassette deck with a five-second countdown. The application's controls do not operate the deck's hardware recording button.
+- Export A/B WAV files as 16-bit stereo, padded to the selected side capacity. Recording settings offer DAT-oriented 48 kHz and 44.1 kHz output; Unspecified keeps the existing 44.1 kHz format. Save links appear only for the selected cassette's generated audio; editing its contents or settings invalidates them.
+- Keep side tabs, editing controls, and track column headings visible at the top while scrolling the track list.
+- Prepare playback for a cassette deck with immediate start or a five-second countdown. The application's controls do not operate the deck's hardware recording button.
 - Import individual URLs supported by yt-dlp. Playlist expansion, DRM, and sign-in-required media are not supported.
 - Recover a detectable legacy Japanese tag encoding error without modifying source media.
 
@@ -57,8 +58,8 @@ Open **Options** in the top-right corner for shared tools and language selection
 | Control | Scope and effect |
 | --- | --- |
 | Reference tone | Plays a tone for setting the deck recording level. |
-| Analyze loudness / DC | Measures selected tracks, or displayed tracks if none are selected. Keeps playback ranges; measurements are shared by cassettes using the same source. Enable corrections separately in recording settings. |
-| Reanalyze silence in the entire library | Updates leading/trailing silence and playback ranges using the current recording/import settings. Unavailable while any cassette contains tracks. |
+| Analyze loudness / DC in selected tracks | Measures selected tracks, or displayed tracks if none are selected. Keeps playback ranges; measurements are shared by cassettes using the same source. Enable corrections separately in recording settings. |
+| Reanalyze silence in selected tracks | Reanalyzes only selected sources using the current settings and updates their ranges in existing mixes. No selection means no analysis. |
 | Language | Select Japanese or English. First launch follows the environment; a manual selection is saved. |
 
 Loudness/DC measurement and silence reanalysis are separate operations. Completion notifications remain visible in front of the open Options dialog.
@@ -144,23 +145,29 @@ Other distributions should build from source. Linux build, startup, import, norm
 
 ## Using cassettes
 
-Import into **All tracks**, then use the sidebar + buttons to create playlists or empty cassettes. Double-click a track to play it. The source library cannot be reordered or deleted through the playlist editor; edit a playlist or cassette instead.
+Use **Add files** or **Add URL** in the top row beside **Options** to import into the selected collection. In **All tracks**, creation/import settings and cassette creation controls share the title row. Use the sidebar + buttons to create playlists or empty cassettes. Double-click a track to play it. In All tracks, Remove selected deletes the selected registrations and their references in every playlist/cassette after confirmation. Original files and imported copies are kept. The source library cannot be reordered. Playlist/cassette removal affects only that collection.
 
 ![Cassette sides and remaining capacity](docs/screenshots/cassette-en.jpg)
 
-Select a cassette and open **Recording settings** in its toolbar to choose its nominal length and per-side correction. A single correction applies to both sides. Automatic arrangement, remaining-space displays, playback rendering and WAV export use corrected capacity.
+Select a cassette and open **Recording settings** beside its title in the right pane. The controls appear in this order: **Add from library**, **Recording settings**, **Rename**, **Delete**. Use recording settings to enter its actual per-side length in minutes and seconds. The same duration applies to both sides. Existing cassettes retain their effective length, including any previously saved correction. Automatic arrangement, remaining-space displays, playback rendering and WAV export use this duration.
 
 To fill several empty cassettes, create them and save their settings first. Use **Create cassette automatically** from a playlist or All tracks, then select destinations. Selected tracks are candidates, or the full displayed list when none are selected. Starting from an empty cassette uses the full library. Filled cassettes are not overwritten; some destinations can remain empty if tracks are insufficient.
 
-Duplicate prevention uses source track IDs. An A-to-B continuation counts as one track. The same recording imported as another file is a separate source. The planner uses a 0.1-second subset-sum search and completes A first; it does not guarantee a global optimum for both sides or all cassettes. Manual edits retain your order and report overflow.
+Duplicate prevention uses source track IDs. An A-to-B continuation counts as one track. Identical file bytes reuse the existing source; separately encoded or tagged files are distinct sources. The planner uses a 0.1-second subset-sum search and completes A first; it does not guarantee a global optimum for both sides or all cassettes. Manual edits retain your order and report overflow.
 
-Continuation and fill settings affect newly arranged cassettes. For an existing cut, edit the playback range or recreate the cassette. With zero rewind, continuation starts at the cut; three seconds repeats the preceding three seconds. Silence settings apply to new imports. Reanalyzing existing media requires removing created cassettes first.
+Continuation and fill settings affect newly arranged cassettes. For an existing cut, edit the playback range or recreate the cassette. Continuation starts at the cut. Existing cassette playback ranges are preserved; the new behavior applies to new arrangements. Silence settings apply to new imports. Select tracks to reanalyze their boundary silence; existing cassettes are updated without deletion.
 
-For deck recording, connect computer audio to the deck, prepare the selected side, start the deck's recording, then start the five-second playback countdown. Side A stops at its end; turn the tape over and start B separately. Use media you are entitled to record.
+For deck recording, connect computer audio to the deck, prepare the selected side, start the deck's recording, then choose immediate playback or the five-second playback countdown. Side A stops at its end; turn the tape over and start B separately. Use media you are entitled to record.
 
 Leading silence is shared by A/B sides and adjustable in 0.5-second steps (default: zero). It consumes tape capacity and applies to playback, automatic arrangement, and WAV export. If an existing cassette no longer fits, rearrange its tracks or use playback-range Auto fit. The DAT-oriented WAV format offers Unspecified (16-bit / 44.1 kHz), 16-bit / 48 kHz, and 16-bit / 44.1 kHz. It does not change source files, individual-track previews, or recorder settings.
 
-![Tape length correction, leading silence, DAT WAV format and loudness settings](docs/screenshots/settings-en.jpg)
+![Tape length in minutes/seconds, leading silence, DAT WAV format and loudness settings](docs/screenshots/settings-en.jpg)
+
+![Silence, normalization and DC settings](docs/screenshots/settings-audio-en.jpg)
+
+![Immediate playback and five-second countdown](docs/screenshots/recording-en.jpg)
+
+![Sticky side tabs and column headings while scrolling](docs/screenshots/scroll-en.jpg)
 
 ## Loudness
 
@@ -196,20 +203,20 @@ The Arch package is built from source in the official Arch Linux container using
 
 ```sh
 sudo pacman -Syu
-sudo pacman -U ./cassette-studio-0.1.3-1-x86_64.pkg.tar.zst
+sudo pacman -U ./cassette-studio-0.1.4-1-x86_64.pkg.tar.zst
 cassette-studio
 ```
 
 The desktop entry is also available in your application menu. `cassette-studio-browser` starts the local browser interface. Runtime dependencies, including FFmpeg and WebKitGTK 4.1, are resolved by pacman. For URL imports, optionally install `yt-dlp` and `nodejs`. File dialogs require a working desktop portal backend; on GTK/Xfce desktops install `xdg-desktop-portal-gtk` if no suitable backend is configured.
 
-To rebuild, download **PKGBUILD** and **CassetteStudio-0.1.3-Arch-source.tar.gz** from the same release into an empty folder, inspect PKGBUILD, then run as a regular user:
+To rebuild, download **PKGBUILD** and **CassetteStudio-0.1.4-Arch-source.tar.gz** from the same release into an empty folder, inspect PKGBUILD, then run as a regular user:
 
 ```sh
 sudo pacman -S --needed base-devel rust pkgconf python
 makepkg -si
 ```
 
-The source archive is checked against the SHA-256 embedded in PKGBUILD. It is a release-specific snapshot including the Arch packaging and updated documentation; the application version is 0.1.3. The repository template is `packaging/arch/PKGBUILD.in`, and `scripts/prepare-arch-package.py` generates the concrete checksummed files from the current commit.
+The source archive is checked against the SHA-256 embedded in PKGBUILD. It is a release-specific snapshot including the Arch packaging and updated documentation; the application version is 0.1.4. The repository template is `packaging/arch/PKGBUILD.in`, and `scripts/prepare-arch-package.py` generates the concrete checksummed files from the current commit.
 
 This is a GitHub download, not an official Arch repository or AUR package. Arch is rolling release software; the package is tested against the build-time repository state and may need rebuilding after system library changes. CI checks package installation, native-window startup under Xvfb, audio import, DC/fade WAV generation and embedded UI assets. Physical sound output, deck recording, and every desktop/Wayland combination are not covered by these checks.
 
@@ -234,18 +241,18 @@ For development, install Xcode Command Line Tools and Rust stable, then run:
 ```sh
 cargo run --release --features desktop --bin cassette-studio-desktop --locked
 # Package the current Mac architecture:
-sh scripts/package-public-macos.sh 0.1.3
+sh scripts/package-public-macos.sh 0.1.4
 ```
 
 Apple Silicon and Intel packages are built separately. `scripts/test-macos-package.py` tests the packaged native app and browser executable using synthetic audio and a temporary library. These checks do not replace physical playback/recording tests.
 
 ## DC offset removal
 
-In Recording settings, enable **Remove DC offset** (initially OFF). The option is saved per playlist/cassette. **Analyze loudness / DC** analyzes selected tracks, or the displayed list when none are selected; older tracks are analyzed automatically when correction is needed for playback or export. The track loudness dialog shows separate left/right offsets as a percentage of full scale.
+In Recording settings, enable **Remove DC offset** (initially OFF). The option is saved per playlist/cassette. **Analyze loudness / DC in selected tracks** analyzes selected tracks, or the displayed list when none are selected; older tracks are analyzed automatically when correction is needed for playback or export. The track loudness dialog shows separate left/right offsets as a percentage of full scale.
 
 The arithmetic mean of each channel over the trimmed track is subtracted before gain and fades. Corrected loudness/true peak are measured separately from the original and used for normalization and peak protection. Preview, deck playback and WAV export share the same processing. A track continued onto B retains the whole track's offset, rather than measuring each fragment. Source files are unchanged. The peak ceiling is enforced when DC correction is on, even with normalization off.
 
-When importing with DC removal enabled, boundary silence is checked both before and after correction. Changing the setting does not alter existing track ranges: reanalyze sources if boundary trimming also needs updating. Existing cassettes must be removed before the silence reanalysis operation. Correction removes a constant mean offset; it is not a time-varying low-cut filter and does not control a deck's recording bias.
+When importing with DC removal enabled, boundary silence is checked both before and after correction. Changing the setting does not alter existing track ranges: reanalyze sources if boundary trimming also needs updating. Select only the tracks to reanalyze; existing cassette ranges update automatically. Correction removes a constant mean offset; it is not a time-varying low-cut filter and does not control a deck's recording bias.
 
 ## Legacy Japanese tags
 
@@ -275,6 +282,8 @@ node scripts/smoke-test.mjs
 node scripts/test-batch.mjs
 node scripts/test-loudness.mjs
 node scripts/test-dc.mjs
+node scripts/test-silence-reanalysis.mjs
+node scripts/test-library-delete.mjs
 node scripts/test-dat-settings.mjs
 ```
 
@@ -286,7 +295,11 @@ Tests generate synthetic media under `work/` and use isolated libraries. Coverag
 
 ## Building public release packages
 
-Use `scripts/package-public-windows.ps1` on Windows, `scripts/package-public-linux.sh` after building the Linux binaries, and `scripts/package-public-macos.sh` on each Mac architecture. These create application-only packages under `dist/releases/v0.1.3/`. Python 3 is required to collect exact dependency notices; keep the copyright files supplied with the Rust toolchain available. The separate `package-windows.ps1` and `package-linux.sh` helpers create local bundles with external tools and are not used for the public release.
+Use `scripts/package-public-windows.ps1` on Windows, `scripts/package-public-linux.sh` after building the Linux binaries, and `scripts/package-public-macos.sh` on each Mac architecture. These create application-only packages under `dist/releases/v0.1.4/`. Python 3 is required to collect exact dependency notices; keep the copyright files supplied with the Rust toolchain available. The separate `package-windows.ps1` and `package-linux.sh` helpers create local bundles with external tools and are not used for the public release.
+
+Silence reanalysis requires a selection and analyzes those source tracks only. Whole-track entries follow the new audible length; boundary-anchored ends follow the new boundaries, while manually chosen interior positions retain their original source positions and are clipped to the new audible range. Zero-length cassette entries are removed. Track order is preserved and capacity overruns are reported. Re-export existing WAVs after reanalysis. Detection scans the entire decoded audio forward and trims only silence connected to its beginning or end, retaining intentional internal pauses and subsequent audio.
+
+File imports compare SHA-256 identities of the original file bytes. Identical files are reused even after renaming; files with the same name but different bytes remain distinct. Importing into a playlist or cassette reuses an existing source and does not insert it twice in that target. Existing libraries are checked too. Different tags or formats produce different file identities. Run `node scripts/test-duplicate-import.mjs` for batch, concurrent, legacy, restart, skipped-analysis and temporary-file cleanup checks.
 
 ## Source organization
 

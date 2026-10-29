@@ -6,7 +6,7 @@ def check(names,root,executable):
     for suffix in [executable,'README.md','README.ja.md','LICENSE','THIRD_PARTY_NOTICES.md','docs/dolby-b-c-research.ja.md','licenses/dependencies.json','licenses/rust-standard-library/COPYRIGHT-library.html','licenses/option-ext-0.2.0/source/src/lib.rs']:
         assert f'{root}/{suffix}' in paths,suffix
     for language in ['ja','en']:
-        for screen in ['library','cassette','settings','options','reference-tone','entry-fit']:
+        for screen in ['library','cassette','settings','options','reference-tone','entry-fit','settings-audio','recording','scroll']:
             assert f'{root}/docs/screenshots/{screen}-{language}.jpg' in paths
     for name in paths:
         parts=pathlib.PurePosixPath(name).parts
@@ -33,4 +33,4 @@ for arch in ['arm64','x64']:
         assert f'{root}/SetupAudioTools.command' in paths
         executable=archive.getinfo(f'{root}/Cassette Studio.app/Contents/MacOS/CassetteStudio')
         assert (executable.external_attr>>16)&0o111
-print('PASS: Windows/Linux/macOS archives, executables, bilingual docs, 12 screenshots, crate/runtime licenses, MPL source, no user media or library')
+print('PASS: Windows/Linux/macOS archives, executables, bilingual docs, 18 screenshots, crate/runtime licenses, MPL source, no user media or library')

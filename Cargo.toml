@@ -1,6 +1,6 @@
 [package]
 name = "cassette-studio"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2024"
 description = "Cross-platform cassette playlist editor and audio renderer"
 license = "MIT"
@@ -27,6 +27,7 @@ url = "2"
 fs2 = "0.4"
 directories = "6"
 encoding_rs = "0.8"
+sha2 = "0.10.9"
 wry = { version = "0.57", optional = true }
 tao = { version = "0.37", optional = true }
 rfd = { version = "0.17", optional = true }

@@ -8,6 +8,7 @@ fn test_track() -> Track {
         artist: String::new(),
         filename: String::new(),
         source: String::new(),
+        content_hash: None,
         duration: 10.0,
         trim_start: 0.0,
         trim_end: 10.0,
@@ -157,6 +158,23 @@ fn dc_parsing_gain_and_cache_are_independent_of_raw_measurements() {
 fn only_boundary_silence_is_trimmed() {
     let log = "silence_start: 0\nsilence_end: 2 | silence_duration: 2\nsilence_start: 10\nsilence_end: 15\nsilence_start: 28\nsilence_end: 30";
     assert_eq!(silence_bounds(log, 30.0), (2.0, 28.0));
+    // A brief audible return after an internal pause must survive at either edge.
+    assert_eq!(
+        silence_bounds("silence_start: 2\nsilence_end: 9.99", 10.0),
+        (0.0, 10.0)
+    );
+    assert_eq!(
+        silence_bounds("silence_start: 0.01\nsilence_end: 2", 10.0),
+        (0.0, 10.0)
+    );
+    assert_eq!(
+        silence_bounds(
+            "silence_start: 10\nsilence_end: 15\nsilence_start: 28",
+            30.0
+        ),
+        (0.0, 28.0)
+    );
+
     assert_eq!(
         silence_bounds("silence_start: 10\nsilence_end: 15", 30.0),
         (0.0, 30.0)

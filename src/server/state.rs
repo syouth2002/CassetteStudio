@@ -17,6 +17,7 @@ pub(super) struct App {
     pub(super) root: PathBuf,
     pub(super) library: Arc<Mutex<Library>>,
     pub(super) jobs: Arc<tokio::sync::Semaphore>,
+    pub(super) imports: Arc<tokio::sync::Mutex<()>>,
 }
 pub(super) struct Error(pub(super) String);
 impl From<String> for Error {
@@ -174,6 +175,7 @@ impl App {
             root: root.clone(),
             library: Arc::new(Mutex::new(initial_library)),
             jobs: Arc::new(tokio::sync::Semaphore::new(2)),
+            imports: Arc::new(tokio::sync::Mutex::new(())),
         })
     }
 }

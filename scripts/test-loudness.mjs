@@ -17,7 +17,7 @@ await writeFile(path.join(data,'library.json'),JSON.stringify({tracks:[legacy],c
 const server=spawn(path.join(root,'target','debug',`cassette-studio${process.platform==='win32'?'.exe':''}`),[],{cwd:root,windowsHide:true,env:{...process.env,CASSETTE_PORT:'3213',CASSETTE_DATA:data},stdio:'ignore'});
 const base='http://127.0.0.1:3213';
 async function api(route,body,method='POST'){const r=await fetch(base+route,body===undefined?{}:{method,headers:{'content-type':'application/json'},body:JSON.stringify(body)});const j=await r.json();assert.ok(r.ok,JSON.stringify(j));return j;}
-const s={side_seconds:16,gap:0,fill_threshold:30,fade:1,continuation:'resume',rewind:0,silence_db:-50,silence_min:.2,normalize:true,target_lufs:-18,peak_db:-1};
+const s={side_seconds:16,gap:0,fill_threshold:30,fade:1,continuation:'resume',silence_db:-50,silence_min:.2,normalize:true,target_lufs:-18,peak_db:-1};
 const entry=(id,offset=0,duration=8)=>({track_id:id,offset,duration,fade_in:0,fade_out:0,continuation:false});
 async function download(url,name){const file=path.join(dir,name);await writeFile(file,Buffer.from(await(await fetch(base+url)).arrayBuffer()));return file;}
 function measure(file,start=0,length=8){const filter=`atrim=start=${start}:duration=${length},asetpts=PTS-STARTPTS,loudnorm=I=-18:TP=-1:LRA=50:print_format=json`;const out=run(['-i',file,'-af',filter,'-f','null','-']).stderr;const text=out.slice(out.lastIndexOf('{'),out.lastIndexOf('}')+1);const j=JSON.parse(text);return {i:+j.input_i,peak:+j.input_tp};}

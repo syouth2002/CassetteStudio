@@ -26,10 +26,10 @@ try{
  const imported=await (await fetch(base+'/api/import',{method:'POST',body:form})).json();assert.equal(imported.errors?.length,0,JSON.stringify(imported));assert.equal(imported.tracks.length,2);
  const [a,b]=imported.tracks;close(a.duration,7);close(a.trim_start,1);close(a.trim_end,5);close(b.duration,10);close(b.trim_start,.5);close(b.trim_end,8.5);
  const ids=imported.tracks.map(t=>t.id);
- const sides=await api('/api/plan',{tracks:ids,settings:s,optimize:false});assert.equal(sides[0].length,2);close(sides[0][1].duration,5);close(sides[0][1].fade_out,1);close(sides[1][0].offset,4);close(sides[1][0].duration,4);close(sides[1][0].fade_in,1);
+ const sides=await api('/api/plan',{tracks:ids,settings:{...s,rewind:3},optimize:false});assert.equal(sides[0].length,2);close(sides[0][1].duration,5);close(sides[0][1].fade_out,1);close(sides[1][0].offset,5);close(sides[1][0].duration,3);close(sides[1][0].fade_in,1);
  const restart=await api('/api/plan',{tracks:ids,settings:{...s,continuation:'restart'},optimize:false});close(restart[1][0].offset,0);close(restart[1][0].duration,8);close(restart[1][0].fade_in,0);
  const auto=await api('/api/plan',{tracks:ids,settings:s,optimize:true});assert.ok(auto.every(es=>es.reduce((n,e)=>n+e.duration,0)+Math.max(0,es.length-1)*s.gap<=10.001));
- const c=await api('/api/collections',{id:'',name:'Synthetic test cassette',kind:'cassette',tracks:ids,sides,settings:s});assert.ok(c.id);
+ const c=await api('/api/collections',{id:'',name:'Synthetic test cassette',kind:'cassette',tracks:ids,sides,settings:s});assert.ok(c.id);assert.ok(!Object.hasOwn(c.settings,'rewind'));
  await api('/api/collections',{id:'',name:'Synthetic test playlist',kind:'playlist',tracks:[...ids].reverse(),sides:[[],[]],settings:s});
  const cache=await api('/api/render',{sides,settings:s});assert.equal(cache.urls.length,2);
  const [outA,outB]=await Promise.all(cache.urls.map(async(u)=>Buffer.from(await (await fetch(base+u)).arrayBuffer())));

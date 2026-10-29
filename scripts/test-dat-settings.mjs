@@ -47,7 +47,7 @@ try{
  const preview=await api('/api/preview/'+track.id,{...settings,wav_sample_rate:48000});
  const previewWav=Buffer.from(await(await fetch(base+preview.url)).arrayBuffer());
  assert.equal(previewWav.readUInt32LE(24),44100);assert.ok(rms(previewWav,0,.1)>1000);
- const capacity={side_seconds:2,lead_in:.5,gap:0,fade:.5,fill_threshold:0,continuation:'resume',rewind:0,wav_sample_rate:48000};
+ const capacity={side_seconds:2,lead_in:.5,gap:0,fade:.5,fill_threshold:0,continuation:'resume',wav_sample_rate:48000};
  for(const optimize of [false,true]){
   const planned=await api('/api/plan',{tracks:[track.id],settings:capacity,optimize});
   assert.equal(planned[0][0].duration,1.5);assert.equal(planned[1][0].offset,1.5);

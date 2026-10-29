@@ -29,7 +29,7 @@ function drawSelection() {
   $("adjust-volume").disabled = selected.size !== 1;
   $("edit-entry").disabled = selected.size !== 1;
   $("move-side").disabled = !selected.size;
-  $("remove-selected").disabled = !selected.size || active === "all";
+  $("remove-selected").disabled = !selected.size || busy > 0;
   $("select-all").checked = list.length > 0 && selected.size === list.length;
   $("select-all").indeterminate =
     selected.size > 0 && selected.size < list.length;
@@ -81,7 +81,7 @@ function draw() {
   $("list-label").hidden = tape;
   $("edit-entry").disabled = selected.size !== 1;
   $("move-side").disabled = !selected.size;
-  $("remove-selected").disabled = !selected.size || active === "all";
+  $("remove-selected").disabled = !selected.size || busy > 0;
   $("selection-count").textContent = selected.size
     ? csText("{0}曲選択", selected.size)
     : "";

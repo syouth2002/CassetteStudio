@@ -124,10 +124,18 @@ function bindLibraryControls() {
     $("url-dialog").close();
     await task(csText("URLから音声を取得して解析しています…"), async () => {
       const t = await api("/api/url", { url, settings: s });
-      lib.tracks.push(t);
-      const skipped = await attachTracks([t.id], destination);
+      const existing = lib.tracks.some((old) => old.id === t.id);
+      if (!existing) lib.tracks.push(t);
+      const skipped = await attachImportedTracks([t.id], destination);
       draw();
-      if (!skipped) toast(csText("URLの音源を追加しました"));
+      if (!skipped)
+        toast(
+          csText(
+            existing
+              ? "登録済みの音源を使用しました"
+              : "URLの音源を追加しました",
+          ),
+        );
     });
   };
   $("tracks").onchange = (e) => {
@@ -197,7 +205,47 @@ function bindLibraryControls() {
     selected.clear();
     changed();
   };
-  $("remove-selected").onclick = () => {
+  $("remove-selected").onclick = async () => {
+    if (busy || !selected.size) return;
+    if (active === "all") {
+      const list = entries();
+      const ids = [
+        ...new Set([...selected].map((i) => list[i]?.track_id).filter(Boolean)),
+      ];
+      if (!ids.length) return;
+      if (
+        !(await askConfirm(
+          csText(
+            "選択した{0}曲をライブラリから削除します。使用中のプレイリスト・カセットからも取り除きます。音源ファイルは残ります。削除しますか？",
+            ids.length,
+          ),
+        ))
+      )
+        return;
+      stop();
+      $("workspace").inert = true;
+      try {
+        await task(csText("ライブラリから曲を削除しています…"), async () => {
+          await saveChain;
+          const updated = await api("/api/tracks", { tracks: ids }, "DELETE");
+          stop();
+          lib = updated;
+          selected.clear();
+          renderCache = null;
+          downloadCaches.clear();
+          draw();
+          toast(
+            csText(
+              "{0}曲をライブラリから削除しました。音源ファイルは保持しています",
+              ids.length,
+            ),
+          );
+        });
+      } finally {
+        $("workspace").inert = false;
+      }
+      return;
+    }
     const c = current();
     if (!c || !selected.size) return;
     if (c.kind === "playlist")

@@ -17,7 +17,7 @@ async function task(message, fn) {
   $("busy").hidden = false;
   document
     .querySelectorAll(
-      ".toolbar button,#tone-open,#analyze-volume,#export-btn,#record-btn,#save-settings,#reanalyze-btn",
+      ".workspace-action,#remove-selected,#tone-open,#analyze-volume,#export-btn,#record-btn,#save-settings,#reanalyze-btn",
     )
     .forEach((b) => (b.disabled = true));
   try {
@@ -31,9 +31,10 @@ async function task(message, fn) {
       $("busy").hidden = true;
       document
         .querySelectorAll(
-          ".toolbar button,#tone-open,#analyze-volume,#export-btn,#record-btn,#save-settings,#reanalyze-btn",
+          ".workspace-action,#remove-selected,#tone-open,#analyze-volume,#export-btn,#record-btn,#save-settings,#reanalyze-btn",
         )
         .forEach((b) => (b.disabled = false));
+      if (typeof drawSelection === "function") drawSelection();
     }
   }
 }

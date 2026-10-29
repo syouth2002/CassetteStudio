@@ -28,7 +28,7 @@ jobs:
           # The minimal Docker image excludes /usr/share/doc by default.
           # Verify our shipped documentation as well as the executable files.
           sed -i '/^[[:space:]]*NoExtract[[:space:]]*=/d' /etc/pacman.conf
-          pacman -U --noconfirm dist/arch/cassette-studio-0.1.3-1-x86_64.pkg.tar.zst
+          pacman -U --noconfirm dist/arch/cassette-studio-0.1.4-1-x86_64.pkg.tar.zst
           pacman -Qkk cassette-studio
           test -f /usr/share/doc/cassette-studio/docs/screenshots/options-ja.jpg
           test -f /usr/share/doc/cassette-studio/licenses/rust-standard-library/COPYRIGHT-library.html
@@ -40,7 +40,7 @@ jobs:
         with:
           name: arch-x86_64
           path: |
-            dist/arch/cassette-studio-0.1.3-1-x86_64.pkg.tar.zst
-            dist/arch/CassetteStudio-0.1.3-Arch-source.tar.gz
+            dist/arch/cassette-studio-0.1.4-1-x86_64.pkg.tar.zst
+            dist/arch/CassetteStudio-0.1.4-Arch-source.tar.gz
             dist/arch/PKGBUILD
           if-no-files-found: error

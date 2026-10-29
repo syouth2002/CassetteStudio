@@ -6,7 +6,7 @@ import {randomUUID} from 'node:crypto';
 import assert from 'node:assert/strict';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const dir=path.join(root,'work',`batch-${Date.now()}`);await mkdir(dir,{recursive:true});
-const settings={side_seconds:50,gap:0,fill_threshold:0,fade:5,continuation:'resume',rewind:3,silence_db:-50,silence_min:.2};
+const settings={side_seconds:50,gap:0,fill_threshold:0,fade:5,continuation:'resume',silence_db:-50,silence_min:.2};
 const tracks=[30,60,80,40,90,120].map((duration,i)=>({id:randomUUID(),title:`Test ${i}`,artist:'Synthetic fixture',filename:'fixture.wav',source:'local',duration,trim_start:0,trim_end:duration}));
 const blank=(name,seconds)=>({id:randomUUID(),name,kind:'cassette',tracks:[],sides:[[],[]],settings:{...settings,side_seconds:seconds}});
 const used=blank('収録済み',50);used.sides[0]=[{track_id:tracks[0].id,offset:0,duration:30,fade_in:0,fade_out:0,continuation:false}];

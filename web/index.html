@@ -14,12 +14,18 @@
         <div>Cassette Studio<small>MAKE ROOM FOR YOUR MUSIC</small></div>
       </div>
       <div class="header-actions">
+        <button id="import-btn" class="workspace-action primary">
+          <span data-i18n="＋ ファイル追加">＋ ファイル追加</span>
+        </button>
+        <button id="url-btn" class="workspace-action">
+          <span data-i18n="↗ URL追加">↗ URL追加</span>
+        </button>
         <button id="options-btn" data-i18n="オプション">オプション</button
         ><span id="tool-status"><span data-i18n="接続中…">接続中…</span></span>
       </div>
     </header>
-    <div class="workspace">
-      <aside>
+    <div id="workspace" class="workspace">
+      <aside id="library-pane">
         <div class="aside-heading">
           <span><span data-i18n="ライブラリ">ライブラリ</span></span>
         </div>
@@ -39,7 +45,7 @@
         </div>
         <div id="playlists"></div>
         <div class="section-label">
-          CASSETTES
+          <span>CASSETTES</span>
           <button
             id="new-cassette"
             title="空のカセットを作成"
@@ -59,46 +65,41 @@
       </aside>
       <main id="drop-zone">
         <div class="page-heading">
-          <div>
-            <div class="eyebrow" id="collection-type">
-              YOUR MUSIC COLLECTION
-            </div>
+          <div class="eyebrow" id="collection-type">YOUR MUSIC COLLECTION</div>
+          <div class="collection-title-row">
             <h1 id="collection-name">
               <span data-i18n="すべての曲">すべての曲</span>
             </h1>
-            <p id="collection-summary">
-              <span data-i18n="音楽や動画をドロップして、最初の一本を。"
-                >音楽や動画をドロップして、最初の一本を。</span
-              >
-            </p>
+            <div class="heading-buttons">
+              <div id="collection-recording-actions" class="recording-actions">
+                <button id="add-library" class="workspace-action" hidden>
+                  <span data-i18n="ライブラリから追加">ライブラリから追加</span>
+                </button>
+                <button id="settings-btn" class="workspace-action">
+                  <span data-i18n="⚙ 録音設定">⚙ 録音設定</span>
+                </button>
+              </div>
+              <button id="rename-btn" hidden>
+                <span data-i18n="名前変更">名前変更</span>
+              </button>
+              <button id="delete-collection" hidden class="danger-text">
+                <span data-i18n="削除">削除</span>
+              </button>
+              <button id="make-manual" class="workspace-action">
+                <span data-i18n="選択／曲順で作成">選択／曲順で作成</span>
+              </button>
+              <button id="make-auto" class="workspace-action dark">
+                <span data-i18n="✦ 自動でカセット作成"
+                  >✦ 自動でカセット作成</span
+                >
+              </button>
+            </div>
           </div>
-          <div class="heading-buttons">
-            <button id="rename-btn" hidden>
-              <span data-i18n="名前変更">名前変更</span></button
-            ><button id="delete-collection" hidden class="danger-text">
-              <span data-i18n="削除">削除</span>
-            </button>
-          </div>
-        </div>
-        <div class="toolbar">
-          <div>
-            <button id="import-btn" class="primary">
-              <span data-i18n="＋ ファイル追加">＋ ファイル追加</span></button
-            ><button id="url-btn">
-              <span data-i18n="↗ URL追加">↗ URL追加</span></button
-            ><button id="add-library" hidden>
-              <span data-i18n="ライブラリから追加">ライブラリから追加</span>
-            </button>
-          </div>
-          <div>
-            <button id="settings-btn">
-              <span data-i18n="⚙ 録音設定">⚙ 録音設定</span></button
-            ><button id="make-manual">
-              <span data-i18n="選択／曲順で作成">選択／曲順で作成</span></button
-            ><button id="make-auto" class="dark">
-              <span data-i18n="✦ 自動でカセット作成">✦ 自動でカセット作成</span>
-            </button>
-          </div>
+          <p id="collection-summary">
+            <span data-i18n="音楽や動画をドロップして、最初の一本を。"
+              >音楽や動画をドロップして、最初の一本を。</span
+            >
+          </p>
         </div>
         <input
           id="file-input"
@@ -108,7 +109,7 @@
           hidden
         />
         <div id="cassette-overview" hidden></div>
-        <div class="list-heading">
+        <div id="track-controls" class="list-heading">
           <div id="side-tabs" hidden>
             <button data-side="0" class="active">SIDE A</button
             ><button data-side="1">SIDE B</button>
@@ -284,7 +285,7 @@
       <div class="option-row">
         <div>
           <button id="analyze-volume">
-            <span data-i18n="音量・DC解析">音量・DC解析</span>
+            <span data-i18n="選択曲の音量・DC解析">選択曲の音量・DC解析</span>
           </button>
         </div>
         <p
@@ -296,15 +297,13 @@
       <div class="option-row">
         <div>
           <button id="reanalyze-btn" type="button">
-            <span data-i18n="ライブラリ全曲の無音を再解析"
-              >ライブラリ全曲の無音を再解析</span
-            >
+            <span data-i18n="選択曲の無音を再解析">選択曲の無音を再解析</span>
           </button>
         </div>
         <p
-          data-i18n="現在の録音・取り込み設定で、全音源の前後の無音と再生範囲を更新します。曲入りのカセットがある場合は実行できません。"
+          data-i18n="選択した曲だけ、前後の無音を再解析します。カセットがある場合も実行でき、各ミックスリストの再生範囲を更新します。"
         >
-          現在の録音・取り込み設定で、全音源の前後の無音と再生範囲を更新します。曲入りのカセットがある場合は実行できません。
+          選択した曲だけ、前後の無音を再解析します。カセットがある場合も実行でき、各ミックスリストの再生範囲を更新します。
         </p>
       </div>
       <div class="option-row">
@@ -386,30 +385,39 @@
               </option>
               <option value="custom" data-i18n="カスタム">カスタム</option>
             </select></label
-          ><label
-            ><span data-i18n="片面の長さ（分）">片面の長さ（分）</span
-            ><input
-              id="side-minutes"
-              type="number"
-              min="0.016667"
-              max="120"
-              step="any"
-              value="30" /></label
-          ><label
-            ><span data-i18n="長さの補正（片面あたり・秒）"
-              >長さの補正（片面あたり・秒）</span
-            ><input
-              id="length-correction"
-              type="number"
-              min="-3600"
-              max="3600"
-              step="0.5"
-              value="0"
-            /><small
-              data-i18n="各カセットに保存。＋で延長、−で短縮し、A/B両面に適用します。"
-              >各カセットに保存。＋で延長、−で短縮し、A/B両面に適用します。</small
-            ></label
-          ><label
+          >
+          <div class="side-length-field">
+            <span data-i18n="片面の長さ（分／秒）">片面の長さ（分／秒）</span>
+            <div class="side-length-inputs">
+              <input
+                id="side-minutes"
+                type="number"
+                min="0"
+                max="120"
+                step="1"
+                value="30"
+                aria-label="片面の長さ（分）"
+                data-i18n-aria-label="片面の長さ（分）"
+              />
+              <span data-i18n="分">分</span>
+              <input
+                id="side-seconds"
+                type="number"
+                min="0"
+                max="59.999999999"
+                step="any"
+                value="0"
+                aria-label="片面の長さ（秒）"
+                data-i18n-aria-label="片面の長さ（秒）"
+              />
+              <span data-i18n="秒">秒</span>
+            </div>
+            <small
+              data-i18n="A/B各面に共通の録音時間です。テープの実際の長さを直接指定できます。"
+              >A/B各面に共通の録音時間です。テープの実際の長さを直接指定できます。</small
+            >
+          </div>
+          <label
             ><span data-i18n="曲間の無音（秒）">曲間の無音（秒）</span
             ><input
               id="gap"
@@ -449,16 +457,6 @@
               </option>
             </select></label
           ><label
-            ><span data-i18n="途中再生時の巻き戻し（秒）"
-              >途中再生時の巻き戻し（秒）</span
-            ><input
-              id="rewind"
-              type="number"
-              min="0"
-              max="60"
-              step="0.5"
-              value="3" /></label
-          ><label
             ><span data-i18n="無音とみなす音量（dB）"
               >無音とみなす音量（dB）</span
             ><input
@@ -466,8 +464,35 @@
               type="number"
               min="-100"
               max="-10"
-              value="-50" /></label
-          ><label
+              value="-50"
+          /></label>
+          <label
+            ><span data-i18n="無音の最小継続時間（秒）"
+              >無音の最小継続時間（秒）</span
+            ><input
+              id="silence-min"
+              type="number"
+              min="0.1"
+              max="10"
+              step="0.1"
+              value="0.5"
+            /><small
+              data-i18n="設定した音量以下の状態が、この秒数以上続くと無音と判定します。曲の前後の無音だけを録音時間から除きます。"
+              >設定した音量以下の状態が、この秒数以上続くと無音と判定します。曲の前後の無音だけを録音時間から除きます。</small
+            ></label
+          >
+          <label
+            ><span data-i18n="音量統一">音量統一</span
+            ><select id="normalize">
+              <option value="false" data-i18n="OFF（手動補正のみ）">
+                OFF（手動補正のみ）
+              </option>
+              <option value="true" data-i18n="ON（ラウドネス正規化）">
+                ON（ラウドネス正規化）
+              </option>
+            </select></label
+          >
+          <label
             ><span data-i18n="DCオフセット除去">DCオフセット除去</span
             ><select id="remove-dc">
               <option value="false" data-i18n="OFF（DC補正なし）">
@@ -480,26 +505,8 @@
               data-i18n="波形の中心ずれを補正します。元ファイルは変更しません。"
               >波形の中心ずれを補正します。元ファイルは変更しません。</small
             ></label
-          ><label
-            ><span data-i18n="音量統一">音量統一</span
-            ><select id="normalize">
-              <option value="false" data-i18n="OFF（手動補正のみ）">
-                OFF（手動補正のみ）
-              </option>
-              <option value="true" data-i18n="ON（ラウドネス正規化）">
-                ON（ラウドネス正規化）
-              </option>
-            </select></label
-          ><label
-            ><span data-i18n="目標音量（LUFS）">目標音量（LUFS）</span
-            ><input
-              id="target-lufs"
-              type="number"
-              min="-36"
-              max="-8"
-              step="0.1"
-              value="-18" /></label
-          ><label
+          >
+          <label
             ><span data-i18n="ピーク上限（dBTP）">ピーク上限（dBTP）</span
             ><input
               id="peak-db"
@@ -507,17 +514,17 @@
               min="-12"
               max="-0.1"
               step="0.1"
-              value="-1" /></label
-          ><label
-            ><span data-i18n="無音の最小継続時間（秒）"
-              >無音の最小継続時間（秒）</span
+              value="-1"
+          /></label>
+          <label
+            ><span data-i18n="目標音量（LUFS）">目標音量（LUFS）</span
             ><input
-              id="silence-min"
+              id="target-lufs"
               type="number"
-              min="0.01"
-              max="10"
-              step="0.01"
-              value="0.2"
+              min="-36"
+              max="-8"
+              step="0.1"
+              value="-18"
           /></label>
         </div>
         <p class="hint">
@@ -651,13 +658,16 @@
       <p id="record-detail"></p>
       <p class="hint">
         <span
-          data-i18n="デッキで録音を開始してから下のボタンを押すと、5秒後に再生します。片面の終了で停止します。"
-          >デッキで録音を開始してから下のボタンを押すと、5秒後に再生します。片面の終了で停止します。</span
+          data-i18n="デッキで録音を開始してから、すぐに再生するか、5秒待って再生するかを選んでください。片面の終了で停止します。"
+          >デッキで録音を開始してから、すぐに再生するか、5秒待って再生するかを選んでください。片面の終了で停止します。</span
         >
       </p>
       <div class="dialog-actions">
         <button id="record-start" class="primary">
           <span data-i18n="5秒後に再生開始">5秒後に再生開始</span>
+        </button>
+        <button id="record-play-now" class="primary">
+          <span data-i18n="再生開始">再生開始</span>
         </button>
       </div>
     </dialog>

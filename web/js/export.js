@@ -15,7 +15,14 @@ async function rendered() {
     name,
     sides,
     s,
-    lib.tracks.map((t) => [t.id, t.manual_gain_db || 0, t.dc || null]),
+    lib.tracks.map((t) => [
+      t.id,
+      t.trim_start,
+      t.trim_end,
+      t.manual_gain_db || 0,
+      t.loudness || null,
+      t.dc || null,
+    ]),
   ]);
   if (renderCache?.key === key) return renderCache;
   const data = await api("/api/render", { sides, settings: s });
@@ -27,7 +34,14 @@ async function rendered() {
       name,
       sides,
       s,
-      lib.tracks.map((t) => [t.id, t.manual_gain_db || 0, t.dc || null]),
+      lib.tracks.map((t) => [
+        t.id,
+        t.trim_start,
+        t.trim_end,
+        t.manual_gain_db || 0,
+        t.loudness || null,
+        t.dc || null,
+      ]),
     ]),
     urls: data.urls,
     sides,
@@ -50,7 +64,14 @@ function syncDownloads() {
         c.name,
         c.sides,
         c.settings,
-        lib.tracks.map((t) => [t.id, t.manual_gain_db || 0, t.dc || null]),
+        lib.tracks.map((t) => [
+          t.id,
+          t.trim_start,
+          t.trim_end,
+          t.manual_gain_db || 0,
+          t.loudness || null,
+          t.dc || null,
+        ]),
       ])
     : null;
   if (!cache || cache.key !== key) {

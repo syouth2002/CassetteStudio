@@ -24,7 +24,10 @@ const edge=await fixture('dc-silence.wav',6,2,(t,c)=>(c?-.07:.12)+(t>=1&&t<5?sig
 const zeroEdge=await fixture('zero-silence.wav',6,2,(t,c)=>t>=1&&t<5?signal(t,c)+(c?-.07:.12):0);
 const hot=await fixture('hot.wav',8,2,t=>.25+.9*Math.sin(2*Math.PI*440*t));
 const legacy={id:randomUUID(),title:'Legacy DC fixture',artist:'Synthetic',filename:'legacy.wav',source:'local',duration:8,trim_start:0,trim_end:8};
-await copyFile(biased,path.join(data,'sources',legacy.id));
+const legacyBytes=Buffer.concat([await readFile(biased),Buffer.from([74,85,78,75,0,0,0,0])]);
+legacyBytes.writeUInt32LE(legacyBytes.length-8,4);
+await writeFile(path.join(data,'sources',legacy.id),legacyBytes);
+const legacyHash=createHash('sha256').update(legacyBytes).digest('hex');
 await writeFile(path.join(data,'library.json'),JSON.stringify({tracks:[legacy],collections:[]}));
 const before=createHash('sha256').update(await readFile(biased)).digest('hex');
 const base='http://127.0.0.1:3221';
@@ -63,7 +66,7 @@ try{
  const h=await upload(hot),hp=await api(`/api/preview/${h.id}`,{...on,peak_db:-6});const hotPcm=await pcm(hp.url);let peak=0;for(let i=0;i<hotPcm.length;i+=2)peak=Math.max(peak,Math.abs(hotPcm.readInt16LE(i)/32768));assert.ok(peak<=10**(-6/20));
  const tape={id:randomUUID(),name:'DC test',kind:'cassette',tracks:[],sides:[[entry(imported.id)],[]],settings:on};await api('/api/collections',tape);
  const saved=JSON.parse(await readFile(path.join(data,'library.json'),'utf8'));assert.equal(saved.collections[0].settings.remove_dc,true);assert.ok(saved.tracks.find(t=>t.id===legacy.id).dc);
- assert.equal(createHash('sha256').update(await readFile(biased)).digest('hex'),before);assert.equal(createHash('sha256').update(await readFile(path.join(data,'sources',legacy.id))).digest('hex'),before);
+ assert.equal(createHash('sha256').update(await readFile(biased)).digest('hex'),before);assert.equal(createHash('sha256').update(await readFile(path.join(data,'sources',legacy.id))).digest('hex'),legacyHash);
  await writeFile(path.join(dir,'result.json'),JSON.stringify({passed:true,dc:imported.dc,normalized:result,peak,checks:['stereo DC','mono','silence','DC and digital padding','OFF preservation','preview/export agreement','fades and A/B continuation','legacy analysis','corrected loudness','peak protection','cache isolation','settings persistence','unchanged sources']},null,2));
  console.log(`PASS: DC correction, channel independence, preview/WAV agreement, fades, continuation, trimming, normalization, peak protection, legacy data, persistence and untouched sources.\n${dir}`);
 }finally{server.kill();}

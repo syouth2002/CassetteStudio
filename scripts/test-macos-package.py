@@ -37,7 +37,13 @@ with tempfile.TemporaryDirectory(prefix='cassette-macos-') as folder:
                 body=(f'--{boundary}\r\nContent-Disposition: form-data; name="files"; filename="tone.wav"\r\nContent-Type: audio/wav\r\n\r\n'.encode()+media.read_bytes()+f'\r\n--{boundary}--\r\n'.encode())
                 request=urllib.request.Request(base+'/api/import',data=body,headers={'Content-Type':f'multipart/form-data; boundary={boundary}'})
                 result=json.load(urllib.request.urlopen(request,timeout=60));assert not result['errors'],result
-                track=result['tracks'][0]
+                track=(result['tracks'] or [d['track'] for d in result.get('duplicates',[])])[0]
+                duplicate=json.load(urllib.request.urlopen(request,timeout=60))
+                assert duplicate['tracks']==[] and duplicate['duplicates'][0]['track']['id']==track['id']
+                assert track['content_hash'].startswith('sha256:')
+                req=urllib.request.Request(base+'/api/reanalyze',method='PUT',data=json.dumps({'tracks':[track['id']],'settings':{'side_seconds':2,'silence_min':.5}}).encode(),headers={'Content-Type':'application/json'})
+                refreshed=json.load(urllib.request.urlopen(req,timeout=60))
+                track=next(t for t in refreshed['tracks'] if t['id']==track['id'])
                 entry={'track_id':track['id'],'offset':0,'duration':.8,'fade_in':0,'fade_out':.5,'continuation':False}
                 for rate in [None,44100,48000]:
                     settings={'side_seconds':2,'gap':0,'fade':.5,'remove_dc':True,'lead_in':.5,'wav_sample_rate':rate}
@@ -49,7 +55,14 @@ with tempfile.TemporaryDirectory(prefix='cassette-macos-') as folder:
                         assert data[:4]==b'RIFF' and len(data)==44+2*actual*4
                         assert struct.unpack_from('<I',data,24)[0]==actual
                         assert not any(data[44:44+actual*2]),'Leading silence missing'
-                print('PASS:',executable,'startup, import, DC/fade WAV, A/B leading silence, DAT formats, embedded UI')
+                payload={'id':'','name':'Native smoke cassette','kind':'cassette','tracks':[], 'sides':[[entry],[entry]],'settings':settings}
+                req=urllib.request.Request(base+'/api/collections',data=json.dumps(payload).encode(),headers={'Content-Type':'application/json'})
+                saved=json.load(urllib.request.urlopen(req,timeout=60))
+                req=urllib.request.Request(base+'/api/tracks',method='DELETE',data=json.dumps({'tracks':[track['id']]}).encode(),headers={'Content-Type':'application/json'})
+                removed=json.load(urllib.request.urlopen(req,timeout=60))
+                assert not any(t['id']==track['id'] for t in removed['tracks'])
+                assert next(c for c in removed['collections'] if c['id']==saved['id'])['sides']==[[],[]]
+                print('PASS:',executable,'startup, import, DC/fade WAV, A/B leading silence, DAT formats, duplicate import, selected reanalysis, cascading deletion, embedded UI')
             finally:
                 process.terminate()
                 try:process.wait(timeout=15)

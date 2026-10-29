@@ -20,8 +20,21 @@ function bindPlaybackControls() {
         `${cache.name} / SIDE ${side ? "B" : "A"} / ${time(cache.settings.side_seconds)}`;
       $("record-start").textContent = csText("5秒後に再生開始");
       $("record-start").disabled = false;
+      $("record-play-now").disabled = false;
       $("record-dialog").showModal();
     });
+  const startRecordingPlayback = () => {
+    clearInterval(countdown);
+    countdown = null;
+    $("record-start").disabled = true;
+    $("record-play-now").disabled = true;
+    $("record-dialog").close();
+    audio
+      .play()
+      .then(() => ($("play-btn").textContent = "Ⅱ"))
+      .catch((e) => toast(e.message));
+  };
+  $("record-play-now").onclick = startRecordingPlayback;
   $("record-start").onclick = () => {
     $("record-start").disabled = true;
     let remaining = 5;
@@ -29,15 +42,7 @@ function bindPlaybackControls() {
     countdown = setInterval(() => {
       remaining--;
       $("record-start").textContent = csText("{0}秒後に開始…", remaining);
-      if (remaining <= 0) {
-        clearInterval(countdown);
-        countdown = null;
-        $("record-dialog").close();
-        audio
-          .play()
-          .then(() => ($("play-btn").textContent = "Ⅱ"))
-          .catch((e) => toast(e.message));
-      }
+      if (remaining <= 0) startRecordingPlayback();
     }, 1000);
   };
   $("record-dialog").addEventListener("close", () => {

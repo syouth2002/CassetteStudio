@@ -7,7 +7,7 @@ const downloads={innerHTML:'',replaceChildren(){this.innerHTML='';}};
 const ctx={current:()=>current,lib:{tracks:[]},downloadCaches:new Map(),$:()=>downloads,esc:String,csText:(s,...v)=>s.replace(/\{(\d+)\}/g,(_,i)=>v[i])};
 vm.createContext(ctx);
 vm.runInContext(source,ctx);
-const cache=c=>({collection:c.id,name:c.name,key:JSON.stringify([c.id,c.name,c.sides,c.settings,[]]),urls:[`/${c.id}-A.wav`,`/${c.id}-B.wav`]});
+const cache=c=>({collection:c.id,name:c.name,key:JSON.stringify([c.id,c.name,c.sides,c.settings,ctx.lib.tracks.map(t=>[t.id,t.trim_start,t.trim_end,t.manual_gain_db||0,t.loudness||null,t.dc||null])]),urls:[`/${c.id}-A.wav`,`/${c.id}-B.wav`]});
 ctx.showDownloads(cache(a));assert.match(downloads.innerHTML,/a-A.wav/);
 current=b;ctx.syncDownloads();assert.equal(downloads.innerHTML,'');
 // Completion of an earlier export must not expose its links on another cassette.
@@ -17,4 +17,9 @@ current=a;ctx.syncDownloads();assert.match(downloads.innerHTML,/a-A.wav/);assert
 current={kind:'playlist',id:'p'};ctx.syncDownloads();assert.equal(downloads.innerHTML,'');
 current=undefined;ctx.syncDownloads();assert.equal(downloads.innerHTML,'');
 current=a;a.settings.side_seconds=1805;ctx.syncDownloads();assert.equal(downloads.innerHTML,'');
+current=a;ctx.lib.tracks=[{id:'source',trim_start:0,trim_end:10}];
+ctx.showDownloads(cache(a));assert.match(downloads.innerHTML,/a-A.wav/);
+ctx.lib.tracks[0].trim_end=9;ctx.syncDownloads();assert.equal(downloads.innerHTML,'');
+ctx.showDownloads(cache(a));ctx.lib.tracks[0].loudness={integrated_lufs:-18,true_peak_db:-3};
+ctx.syncDownloads();assert.equal(downloads.innerHTML,'');
 console.log('PASS: cassette-specific WAV links, return selection, asynchronous completion, playlist/library, stale export settings');

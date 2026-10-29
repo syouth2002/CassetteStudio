@@ -9,6 +9,7 @@
 | `src/server/assets.rs` | HTML・CSS・JavaScript・翻訳・アイコンの埋め込み配信。配信対象を明示的に限定。 |
 | `src/server/api.rs` | HTTPの入力検証と、ライブラリ・配置・解析・書き出し操作の受け付け。 |
 | `src/server/state.rs` | ライブラリの所有・読み書き・排他制御、旧タグの移行、解析結果の更新、処理数の制限。 |
+| `src/server/imports.rs` | 元ファイルのSHA-256照合、旧音源の識別情報の更新、未登録一時ファイルの後始末。 |
 | `src/server/security.rs` | 別のWebサイトからの変更要求を拒否する処理。 |
 | `src/audio/mod.rs` | 音声機能の共通入口。呼び出し側は個別の実装ファイルに依存しない。 |
 | `src/audio/tools.rs` | FFmpegなどの探索と外部プロセス実行。 |
