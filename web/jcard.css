@@ -1,0 +1,248 @@
+#jc-dialog {
+  width: 96vw;
+  max-width: 1500px;
+  height: 92vh;
+  max-height: 94vh;
+  padding: 18px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+#jc-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#jc-dialog h2 {
+  font-size: 18px;
+  margin: 0;
+}
+#jc-dialog h3 {
+  font-size: 13px;
+  margin: 12px 0 8px;
+}
+.jc-top,
+.jc-toolbar,
+.jc-view-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.jc-top {
+  justify-content: space-between;
+}
+.jc-top > div,
+.jc-bottom > div {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+#jc-dialog button {
+  font-size: 11px;
+  padding: 7px 9px;
+}
+.jc-layout {
+  display: grid;
+  grid-template-columns: 200px minmax(220px, 1fr) 230px;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+#jc-dialog .jc-panel {
+  width: auto;
+  min-width: 0;
+  background: #fafbf7;
+  padding: 10px;
+  overflow: auto;
+  border: 1px solid #d9dfd6;
+  border-radius: 6px;
+}
+#jc-dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+#jc-dialog label:has(input[type="checkbox"]) {
+  flex-direction: row;
+  align-items: center;
+}
+#jc-dialog input,
+#jc-dialog select,
+#jc-dialog textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  padding: 6px;
+  width: 100%;
+}
+#jc-dialog input[type="checkbox"] {
+  width: auto;
+}
+#jc-dialog input[type="color"] {
+  height: 30px;
+}
+#jc-dialog input[type="range"] {
+  width: 120px;
+}
+.jc-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+#jc-dialog .hint {
+  font-size: 10px;
+  line-height: 1.6;
+  margin: 4px 0 8px;
+}
+#jc-layers button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin: 3px 0;
+}
+#jc-layers button.active {
+  background: #dce8dc;
+  border-color: #345e52;
+}
+.jc-stage {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.jc-scroll {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  background: #e4e7e1;
+  border-radius: 6px;
+  padding: 24px;
+}
+#jc-canvas {
+  background: white;
+  box-shadow: 0 3px 12px #0002;
+  touch-action: none;
+  outline: none;
+}
+#jc-canvas svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+}
+#jc-canvas .jc-hit {
+  cursor: move;
+  stroke: transparent;
+  stroke-width: 0.3;
+}
+#jc-canvas .jc-hit.jc-selected {
+  stroke: #1975b8;
+  stroke-dasharray: 1 1;
+}
+.jc-bottom {
+  border-top: 1px solid #ddd;
+  padding-top: 8px;
+}
+@media (max-width: 850px) {
+  .jc-layout {
+    grid-template-columns: 155px minmax(170px, 1fr) 180px;
+  }
+  #jc-dialog {
+    padding: 10px;
+  }
+}
+@media (max-width: 600px) {
+  #jc-dialog {
+    overflow: auto;
+  }
+  .jc-layout {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+  }
+  .jc-scroll {
+    min-height: 350px;
+  }
+  #jc-dialog .jc-panel {
+    max-height: 270px;
+  }
+  .jc-stage {
+    min-height: 400px;
+  }
+}
+
+/* Screen-sized controls belong only to the editor; exports use the artwork model. */
+#jc-canvas svg {
+  overflow: visible;
+}
+#jc-canvas .jc-transform-outline,
+#jc-canvas .jc-rotation-line {
+  fill: none;
+  stroke: #1975b8;
+  stroke-width: 1.3px;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+#jc-canvas .jc-resize,
+#jc-canvas .jc-rotate {
+  fill: white;
+  stroke: #1975b8;
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+  pointer-events: all;
+}
+#jc-canvas .jc-resize-nw,
+#jc-canvas .jc-resize-se {
+  cursor: nwse-resize;
+}
+#jc-canvas .jc-resize-ne,
+#jc-canvas .jc-resize-sw {
+  cursor: nesw-resize;
+}
+#jc-canvas .jc-resize-n,
+#jc-canvas .jc-resize-s {
+  cursor: ns-resize;
+}
+#jc-canvas .jc-resize-e,
+#jc-canvas .jc-resize-w {
+  cursor: ew-resize;
+}
+#jc-canvas .jc-rotate {
+  cursor: grab;
+  fill: #e3f2ff;
+}
+
+#jc-dialog .jc-face-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+#jc-dialog .jc-face-label select {
+  width: 90px;
+}
+#jc-save-state {
+  font-size: 12px;
+  color: #345e52;
+  align-self: center;
+  margin-right: 10px;
+}
+.jc-panel-width {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  gap: 4px;
+  align-items: center;
+}
+
+.jc-clipboard-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}

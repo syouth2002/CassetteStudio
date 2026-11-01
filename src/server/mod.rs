@@ -2,6 +2,7 @@
 mod api;
 mod assets;
 mod imports;
+mod jcard;
 mod security;
 mod state;
 
@@ -16,6 +17,7 @@ pub async fn start_server() -> Result<Server, Box<dyn std::error::Error>> {
     let routes = Router::new()
         .merge(assets::routes())
         .merge(api::routes(&root))
+        .merge(jcard::routes())
         .layer(DefaultBodyLimit::max(2 * 1024 * 1024 * 1024))
         .layer(middleware::from_fn(security::same_origin))
         .with_state(app);

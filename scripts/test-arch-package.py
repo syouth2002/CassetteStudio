@@ -1,4 +1,5 @@
 """Exercise the installed Arch native app and browser engine with synthetic media."""
+import urllib.error
 import json,os,pathlib,subprocess,sys,tempfile,time,urllib.request,wave,math,struct,re
 assert pathlib.Path('/etc/arch-release').exists()
 with tempfile.TemporaryDirectory(prefix='cassette-arch-') as folder:
@@ -21,7 +22,7 @@ with tempfile.TemporaryDirectory(prefix='cassette-arch-') as folder:
                     time.sleep(.2)
                 assert base,(root/'server.log').read_text()
                 status=json.load(urllib.request.urlopen(base+'/api/status'))
-                assert status['version']=='0.1.4' and status['ffmpeg'] and status['ffprobe'],status
+                assert status['version']=='0.1.5' and status['ffmpeg'] and status['ffprobe'],status
                 assert b'options-dialog' in urllib.request.urlopen(base).read()
                 assert b'referenceToneWav' in urllib.request.urlopen(base+'/reference-tone.js').read()
                 boundary='cassette-arch-fixture'
@@ -49,11 +50,24 @@ with tempfile.TemporaryDirectory(prefix='cassette-arch-') as folder:
                 payload={'id':'','name':'Native smoke cassette','kind':'cassette','tracks':[], 'sides':[[entry],[entry]],'settings':settings}
                 req=urllib.request.Request(base+'/api/collections',data=json.dumps(payload).encode(),headers={'Content-Type':'application/json'})
                 saved=json.load(urllib.request.urlopen(req,timeout=60))
+                card={'version':2,'front':65,'spine':12,'flap':25,'height':100,'paper':'letter','margin':5,'extensions':[65,65],'background':'#ffffff','backBackground':'#ffffff','elements':[],'backElements':[{'id':'inside','kind':'text','x':134,'y':8,'w':27,'h':86,'rotation':37,'size':8,'lineHeight':1.3,'text':'内側 / Inside','binding':'sideA'}]}
+                cardurl=base+'/api/jcards/'+saved['id']
+                assert json.load(urllib.request.urlopen(cardurl)) is None
+                request=urllib.request.Request(cardurl,method='PUT',data=json.dumps(card).encode(),headers={'Content-Type':'application/json'})
+                assert json.load(urllib.request.urlopen(request,timeout=60))==card
+                assert json.load(urllib.request.urlopen(cardurl))==card
+                overflow={**card,'extensions':[65,65,65]}
+                request=urllib.request.Request(cardurl,method='PUT',data=json.dumps(overflow).encode(),headers={'Content-Type':'application/json'})
+                try:urllib.request.urlopen(request,timeout=60);raise AssertionError('Oversized card accepted')
+                except urllib.error.HTTPError as error:assert error.code==400
+                assert json.load(urllib.request.urlopen(cardurl))==card
+                assert b'pasteElement' in urllib.request.urlopen(base+'/js/jcard/model.js').read()
+                assert b'refreshTracks' in urllib.request.urlopen(base+'/js/jcard/editor.js').read()
                 req=urllib.request.Request(base+'/api/tracks',method='DELETE',data=json.dumps({'tracks':[track['id']]}).encode(),headers={'Content-Type':'application/json'})
                 removed=json.load(urllib.request.urlopen(req,timeout=60))
                 assert not any(t['id']==track['id'] for t in removed['tracks'])
                 assert next(c for c in removed['collections'] if c['id']==saved['id'])['sides']==[[],[]]
-                print('PASS:',executable,'startup, import, DC/fade WAV, A/B leading silence, DAT formats, duplicate import, selected reanalysis, cascading deletion, embedded UI')
+                print('PASS:',executable,'startup, import, DC/fade WAV, A/B leading silence, DAT formats, duplicate import, selected reanalysis, cascading deletion, J-CARD two-face storage and paper limits, embedded UI')
             finally:
                 process.terminate()
                 try:process.wait(timeout=15)

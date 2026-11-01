@@ -48,9 +48,20 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 .file_name()
                 .map(|n| n.to_string_lossy().into_owned())
                 .unwrap_or_else(|| "Cassette.wav".into());
+            let extension = std::path::Path::new(&filename)
+                .extension()
+                .and_then(|e| e.to_str())
+                .unwrap_or("wav")
+                .to_ascii_lowercase();
+            let (label, extensions): (&str, &[&str]) = match extension.as_str() {
+                "pdf" => ("PDF document", &["pdf"]),
+                "svg" => ("SVG artwork", &["svg"]),
+                "json" => ("J-CARD document", &["json"]),
+                _ => ("WAV audio", &["wav"]),
+            };
             if let Some(path) = rfd::FileDialog::new()
                 .set_file_name(filename)
-                .add_filter("WAV audio", &["wav"])
+                .add_filter(label, extensions)
                 .save_file()
             {
                 *destination = path;

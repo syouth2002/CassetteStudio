@@ -79,6 +79,7 @@ function draw() {
   ])
     $(id).hidden = !tape;
   $("list-label").hidden = tape;
+  $("jcard-btn").hidden = !tape;
   $("edit-entry").disabled = selected.size !== 1;
   $("move-side").disabled = !selected.size;
   $("remove-selected").disabled = !selected.size || busy > 0;

@@ -28,4 +28,5 @@ bindEntriesControls();
 bindSettingsControls();
 bindPlaybackControls();
 bindReferenceToneControls();
+JCardEditor.bind();
 csI18nReady.then(init).catch((error) => toast(error.message));

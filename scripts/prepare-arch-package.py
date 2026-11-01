@@ -2,8 +2,8 @@
 import hashlib,pathlib,subprocess
 root=pathlib.Path(__file__).resolve().parent.parent
 output=root/'dist/arch';output.mkdir(parents=True,exist_ok=True)
-source=output/'CassetteStudio-0.1.4-Arch-source.tar.gz'
-subprocess.run(['git','archive','--format=tar.gz','--prefix=cassette-studio-0.1.4/',
+source=output/'CassetteStudio-0.1.5-Arch-source.tar.gz'
+subprocess.run(['git','archive','--format=tar.gz','--prefix=cassette-studio-0.1.5/',
                 '-o',str(source),'HEAD'],cwd=root,check=True)
 digest=hashlib.sha256(source.read_bytes()).hexdigest()
 template=(root/'packaging/arch/PKGBUILD.in').read_text()

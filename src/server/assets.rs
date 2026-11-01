@@ -4,6 +4,33 @@ use axum::{Router, response::Html, routing::get};
 pub(super) fn routes() -> Router<App> {
     Router::new()
         .route(
+            "/js/jcard/model.js",
+            get(|| async {
+                (
+                    [("content-type", "text/javascript; charset=utf-8")],
+                    include_str!("../../web/js/jcard/model.js"),
+                )
+            }),
+        )
+        .route(
+            "/js/jcard/editor.js",
+            get(|| async {
+                (
+                    [("content-type", "text/javascript; charset=utf-8")],
+                    include_str!("../../web/js/jcard/editor.js"),
+                )
+            }),
+        )
+        .route(
+            "/jcard.css",
+            get(|| async {
+                (
+                    [("content-type", "text/css; charset=utf-8")],
+                    include_str!("../../web/jcard.css"),
+                )
+            }),
+        )
+        .route(
             "/js/core.js",
             get(|| async {
                 (
