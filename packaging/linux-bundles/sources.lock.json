@@ -1,0 +1,52 @@
+[
+  {
+    "package": "yt-dlp",
+    "version": "2026.10.26",
+    "file": "yt_dlp-2026.10.26.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/83/31/4be3987022a6244550ab6a3afe45ad10ac10b5e5ab8874bd8eecc7f8b937/yt_dlp-2026.10.26.tar.gz",
+    "sha256": "abe5c6b94c3b2f0560500add1c42e0a97641752743a5b65588ac2007a6e23eb6"
+  },
+  {
+    "package": "yt-dlp-ejs",
+    "version": "0.8.0",
+    "file": "yt_dlp_ejs-0.8.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/d3/e6/cceb9530e8f4e5940f6f7822d90e9d94f1b85343329a16baaf47bbbb3de1/yt_dlp_ejs-0.8.0.tar.gz",
+    "sha256": "d5fa1639f63b5c4af8d932495f60689d5370f1a095782c944f7f62a303eb104e"
+  },
+  {
+    "package": "mutagen",
+    "version": "1.48.1",
+    "file": "mutagen-1.48.1.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/df/70/1675da133ea92227da41bf5b24e1c66be597ff736a1533ade41da986852f/mutagen-1.48.1.tar.gz",
+    "sha256": "8f95637ab9f6f305cec6bd1294e197debe207998e3e068596563c74f86b0a173"
+  },
+  {
+    "package": "certifi",
+    "version": "2026.10.23",
+    "file": "certifi-2026.10.23.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/fd/11/b524cbd9bbdaca58608e4cf4053fd463417549e1959fa8d3aa18319f9555/certifi-2026.10.23.tar.gz",
+    "sha256": "a9895e6e2758b371e0545e321a3a8fd1fcfd9829ada8824a936dfb16aaaf36cd"
+  },
+  {
+    "package": "curl_cffi",
+    "version": "0.17.0",
+    "file": "curl_cffi-0.17.0.tar.gz",
+    "url": "https://files.pythonhosted.org/packages/96/4c/69074f9797d83a5401b3c6bc58c5de5aad6d1a085d0497b87a093a152e87/curl_cffi-0.17.0.tar.gz",
+    "sha256": "31ee8500d06d6502ce1ec0b7ded1c5aa8e8f3401bbe37ccd78d6153d859d8f3c"
+  },
+  {
+    "file": "libidn2-2.3.7.tar.gz",
+    "url": "https://ftp.gnu.org/gnu/libidn/libidn2-2.3.7.tar.gz",
+    "sha256": "4c21a791b610b9519b9d0e12b8097bf2f359b12f8dd92647611a929e6bfd7d64"
+  },
+  {
+    "file": "readline-6.2-11.el7.src.rpm",
+    "url": "https://vault.centos.org/7.9.2009/os/Source/SPackages/readline-6.2-11.el7.src.rpm",
+    "sha256": "9678eb2f67b1784e5fba3ed0d59cba3ce6f3a3936936dfae956f7aed44b4cbf0"
+  },
+  {
+    "file": "curl-impersonate-2.3.1.tar.gz",
+    "url": "https://codeload.github.com/lexiforest/curl-impersonate/tar.gz/98de20ee6b6ca6f755d59bc502f819079a3c94ac",
+    "sha256": "3a159228fcde3925e6266373460b294d00b6ee9c7709b02d024a81ec1f41ebaf"
+  }
+]

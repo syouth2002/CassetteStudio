@@ -8,7 +8,7 @@ A Rust application for arranging cassette mixtapes, preparing deck playback, and
 
 Source code and documentation: [MIT](LICENSE). Dependencies and external tools retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
 
-Version 0.1.6 adds per-track and whole-side LUFS graphs, original/processed comparisons, cached analysis and a tall graph with controls on the left. See [release changes](docs/release-notes-0.1.6.md).
+Version 0.1.7 adds Linux Flatpak/AppImage downloads, side-by-side storage, bundled media tools/fonts and a Linux WebView container fix. See [release changes](docs/release-notes-0.1.7.md).
 
 ## Download and start
 
@@ -16,16 +16,18 @@ Get the application from [GitHub Releases](https://github.com/syouth2002/Cassett
 
 | Platform | Download | First use |
 | --- | --- | --- |
-| Windows x64 | `CassetteStudio-0.1.6-Windows-x64.zip` | Extract the entire folder, run `SetupAudioTools.cmd` once to obtain FFmpeg/FFprobe and yt-dlp, then run `CassetteStudio.exe`. WebView2 must be installed. |
-| Ubuntu 24.04 x64 | `CassetteStudio-0.1.6-Ubuntu24-amd64.deb` | Run `sudo apt install ./CassetteStudio-0.1.6-Ubuntu24-amd64.deb`, then start Cassette Studio from the app menu. FFmpeg and system runtimes are installed as dependencies. |
-| Linux x64 archive | `CassetteStudio-0.1.6-Linux-Ubuntu24-x64.tar.gz` | Extract and launch `CassetteStudio`. Install FFmpeg, GTK 3, WebKitGTK 4.1, libxdo and D-Bus first. |
-| Arch Linux x86_64 | `cassette-studio-0.1.6-1-x86_64.pkg.tar.zst` | Fully update Arch, then install using `sudo pacman -U ./cassette-studio-0.1.6-1-x86_64.pkg.tar.zst`. |
-| macOS 15+ Apple Silicon | `CassetteStudio-0.1.6-macOS-arm64.zip` | Extract, move `Cassette Studio.app` to Applications and install external tools as described below. |
-| macOS 15+ Intel | `CassetteStudio-0.1.6-macOS-x64.zip` | Same steps; use the Intel archive. |
+| Windows x64 | `CassetteStudio-0.1.7-Windows-x64.zip` | Extract the entire folder, run `SetupAudioTools.cmd` once to obtain FFmpeg/FFprobe and yt-dlp, then run `CassetteStudio.exe`. WebView2 must be installed. |
+| Ubuntu 24.04 x64 | `CassetteStudio-0.1.7-Ubuntu24-amd64.deb` | Run `sudo apt install ./CassetteStudio-0.1.7-Ubuntu24-amd64.deb`, then start Cassette Studio from the app menu. FFmpeg and system runtimes are installed as dependencies. |
+| Traditional Linux x64 archive | `CassetteStudio-0.1.7-Linux-Ubuntu24-x64.tar.gz` | Extract and launch `CassetteStudio`. Install FFmpeg, GTK 3, WebKitGTK 4.1, libxdo and D-Bus first. |
+| Linux Flatpak x86_64 | CassetteStudio-0.1.7-x86_64.flatpak | Install with Flatpak. Uses GNOME 49 and bundled media/URL tools. |
+| Linux AppImage x86_64 | CassetteStudio-0.1.7-x86_64.AppImage | Make executable and run. Targets Ubuntu 24.04-compatible systems with glibc 2.39+. |
+| Arch Linux x86_64 | `cassette-studio-0.1.7-1-x86_64.pkg.tar.zst` | Fully update Arch, then install using `sudo pacman -U ./cassette-studio-0.1.7-1-x86_64.pkg.tar.zst`. |
+| macOS 15+ Apple Silicon | `CassetteStudio-0.1.7-macOS-arm64.zip` | Extract, move `Cassette Studio.app` to Applications and install external tools as described below. |
+| macOS 15+ Intel | `CassetteStudio-0.1.7-macOS-x64.zip` | Same steps; use the Intel archive. |
 
-Release downloads contain the app, bilingual instructions, screenshots and dependency notices. External audio tools are installed separately; they are not bundled in the public release. Windows first-time audio-tool setup needs internet access. For URL imports, install [Node.js 22+](https://nodejs.org/en/download); Linux also needs a current [yt-dlp](https://github.com/yt-dlp/yt-dlp#installation). Local audio imports do not need Node or yt-dlp. Rust is not needed to use these downloads. Check archive integrity against the release's `SHA256SUMS.txt`.
+Release downloads contain the app, bilingual instructions, screenshots and dependency notices. Windows, Ubuntu DEB, traditional Linux, macOS and Arch packages install audio tools separately. Flatpak/AppImage include their own media and URL tools. Windows first-time audio-tool setup needs internet access. For URL imports in formats with separately installed tools, install [Node.js 22+](https://nodejs.org/en/download); traditional Linux also needs a current [yt-dlp](https://github.com/yt-dlp/yt-dlp#installation). Local audio imports do not need Node or yt-dlp. Rust is not needed to use these downloads. Check archive integrity against the release's `SHA256SUMS.txt`.
 
-Screenshots show the current Windows desktop interface with fictional demo tracks. The browser interface uses the same controls. No personal library or music is included.
+Screenshots show the current Windows desktop and bundled Linux interfaces with fictional demo tracks. The browser interface uses the same controls. No personal library or music is included.
 
 ## Features
 
@@ -203,20 +205,20 @@ The Arch package is built from source in the official Arch Linux container using
 
 ```sh
 sudo pacman -Syu
-sudo pacman -U ./cassette-studio-0.1.6-1-x86_64.pkg.tar.zst
+sudo pacman -U ./cassette-studio-0.1.7-1-x86_64.pkg.tar.zst
 cassette-studio
 ```
 
 The desktop entry is also available in your application menu. `cassette-studio-browser` starts the local browser interface. Runtime dependencies, including FFmpeg and WebKitGTK 4.1, are resolved by pacman. For URL imports, optionally install `yt-dlp` and `nodejs`. File dialogs require a working desktop portal backend; on GTK/Xfce desktops install `xdg-desktop-portal-gtk` if no suitable backend is configured.
 
-To rebuild, download **PKGBUILD** and **CassetteStudio-0.1.6-Arch-source.tar.gz** from the same release into an empty folder, inspect PKGBUILD, then run as a regular user:
+To rebuild, download **PKGBUILD** and **CassetteStudio-0.1.7-Arch-source.tar.gz** from the same release into an empty folder, inspect PKGBUILD, then run as a regular user:
 
 ```sh
 sudo pacman -S --needed base-devel rust pkgconf python
 makepkg -si
 ```
 
-The source archive is checked against the SHA-256 embedded in PKGBUILD. It is a release-specific snapshot including the Arch packaging and updated documentation; the application version is 0.1.6. The repository template is `packaging/arch/PKGBUILD.in`, and `scripts/prepare-arch-package.py` generates the concrete checksummed files from the current commit.
+The source archive is checked against the SHA-256 embedded in PKGBUILD. It is a release-specific snapshot including the Arch packaging and updated documentation; the application version is 0.1.7. The repository template is `packaging/arch/PKGBUILD.in`, and `scripts/prepare-arch-package.py` generates the concrete checksummed files from the current commit.
 
 This is a GitHub download, not an official Arch repository or AUR package. Arch is rolling release software; the package is tested against the build-time repository state and may need rebuilding after system library changes. CI checks package installation, native-window startup under Xvfb, audio import, DC/fade WAV generation and embedded UI assets. Physical sound output, deck recording, and every desktop/Wayland combination are not covered by these checks.
 
@@ -241,7 +243,7 @@ For development, install Xcode Command Line Tools and Rust stable, then run:
 ```sh
 cargo run --release --features desktop --bin cassette-studio-desktop --locked
 # Package the current Mac architecture:
-sh scripts/package-public-macos.sh 0.1.6
+sh scripts/package-public-macos.sh 0.1.7
 ```
 
 Apple Silicon and Intel packages are built separately. `scripts/test-macos-package.py` tests the packaged native app and browser executable using synthetic audio and a temporary library. These checks do not replace physical playback/recording tests.
@@ -295,7 +297,7 @@ Tests generate synthetic media under `work/` and use isolated libraries. Coverag
 
 ## Building public release packages
 
-Use `scripts/package-public-windows.ps1` on Windows, `scripts/package-public-linux.sh` after building the Linux binaries, and `scripts/package-public-macos.sh` on each Mac architecture. These create application-only packages under `dist/releases/v0.1.6/`. Python 3 is required to collect exact dependency notices; keep the copyright files supplied with the Rust toolchain available. The separate `package-windows.ps1` and `package-linux.sh` helpers create local bundles with external tools and are not used for the public release.
+Use `scripts/package-public-windows.ps1` on Windows, `scripts/package-all-linux.sh` after building the Linux binaries, and `scripts/package-public-macos.sh` on each Mac architecture. These create release packages under `dist/releases/v0.1.7/`. Python 3 is required to collect exact dependency notices; keep the copyright files supplied with the Rust toolchain available. The separate `package-windows.ps1` and `package-linux.sh` helpers create local bundles with external tools and are not used for the public release.
 
 Silence reanalysis requires a selection and analyzes those source tracks only. Whole-track entries follow the new audible length; boundary-anchored ends follow the new boundaries, while manually chosen interior positions retain their original source positions and are clipped to the new audible range. Zero-length cassette entries are removed. Track order is preserved and capacity overruns are reported. Re-export existing WAVs after reanalysis. Detection scans the entire decoded audio forward and trims only silence connected to its beginning or end, retaining intentional internal pauses and subsequent audio.
 
@@ -326,3 +328,11 @@ LUFS settings, measurements and the track legend appear on the left, with a tall
 ![LUFS SIDE A](docs/screenshots/lufs-side-a-en.jpg)
 
 ![LUFS SIDE B](docs/screenshots/lufs-side-b-en.jpg)
+
+## Common Linux packages
+
+Flatpak/AppImage packages are available with separate storage for side-by-side use. See [installation, storage and build instructions](docs/linux-bundles.md).
+
+![Linux Flatpak](docs/screenshots/linux-flatpak-en.jpg)
+
+![Linux AppImage](docs/screenshots/linux-appimage-en.jpg)

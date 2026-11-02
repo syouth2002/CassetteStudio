@@ -73,7 +73,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(not(target_os = "linux"))]
     let view = builder.build(&window)?;
     #[cfg(target_os = "linux")]
-    let view = builder.build_gtk(window.gtk_window())?;
+    let view = builder.build_gtk(
+        window
+            .default_vbox()
+            .ok_or("GTK content container is unavailable")?,
+    )?;
     let mut runtime = Some(runtime);
     events.run(move |event, _, flow| {
         let _keep_alive = (&view, &window, &context);

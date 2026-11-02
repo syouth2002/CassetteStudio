@@ -6,7 +6,7 @@
 
 カセットテープ用の選曲・録音準備アプリ。ソースコードは[MITライセンス](LICENSE)です。
 
-v0.1.6では、曲単位・A/B面全体のLUFSグラフ、補正前後の比較、解析結果の保存、縦に広いグラフ表示を追加しました。[今回の変更点](docs/release-notes-0.1.6.md)も参照してください。
+v0.1.7では、LinuxのFlatpak／AppImage配布、既存版との併用、同梱ツール・フォント、Linux画面表示の修正を追加しました。[今回の変更点](docs/release-notes-0.1.7.md)も参照してください。
 
 ## ダウンロードして使う
 
@@ -14,16 +14,18 @@ v0.1.6では、曲単位・A/B面全体のLUFSグラフ、補正前後の比較�
 
 | 環境 | 配布ファイル | 初回の使い方 |
 | --- | --- | --- |
-| Windows x64 | `CassetteStudio-0.1.6-Windows-x64.zip` | フォルダ全体を展開し、`SetupAudioTools.cmd`でFFmpeg・FFprobe・yt-dlpを取得した後、`CassetteStudio.exe`を起動します。WebView2が必要です。 |
-| Ubuntu 24.04 x64 | `CassetteStudio-0.1.6-Ubuntu24-amd64.deb` | `sudo apt install ./CassetteStudio-0.1.6-Ubuntu24-amd64.deb`で導入し、アプリ一覧から起動します。FFmpegなどは依存パッケージとして導入されます。 |
-| Linux x64展開版 | `CassetteStudio-0.1.6-Linux-Ubuntu24-x64.tar.gz` | 展開後にCassetteStudioを起動します。FFmpeg・GTK 3・WebKitGTK 4.1・libxdo・D-Busを別途導入してください。 |
-| Arch Linux x86_64 | `cassette-studio-0.1.6-1-x86_64.pkg.tar.zst` | システムを更新後、`sudo pacman -U ./cassette-studio-0.1.6-1-x86_64.pkg.tar.zst`で導入します。 |
-| macOS 15以降・Apple Silicon | `CassetteStudio-0.1.6-macOS-arm64.zip` | 展開し、`Cassette Studio.app`をアプリケーションへ移動。下記のmacOS手順で外部音声ツールを導入します。 |
-| macOS 15以降・Intel | `CassetteStudio-0.1.6-macOS-x64.zip` | Intel用アーカイブを選び、同じ手順で導入します。 |
+| Windows x64 | `CassetteStudio-0.1.7-Windows-x64.zip` | フォルダ全体を展開し、`SetupAudioTools.cmd`でFFmpeg・FFprobe・yt-dlpを取得した後、`CassetteStudio.exe`を起動します。WebView2が必要です。 |
+| Ubuntu 24.04 x64 | `CassetteStudio-0.1.7-Ubuntu24-amd64.deb` | `sudo apt install ./CassetteStudio-0.1.7-Ubuntu24-amd64.deb`で導入し、アプリ一覧から起動します。FFmpegなどは依存パッケージとして導入されます。 |
+| Linux x64展開版 | `CassetteStudio-0.1.7-Linux-Ubuntu24-x64.tar.gz` | 展開後にCassetteStudioを起動します。FFmpeg・GTK 3・WebKitGTK 4.1・libxdo・D-Busを別途導入してください。 |
+| Linux Flatpak x86_64 | CassetteStudio-0.1.7-x86_64.flatpak | Flatpakでインストール。GNOME 49ランタイムを使用し、音声・URLツールを同梱します。 |
+| Linux AppImage x86_64 | CassetteStudio-0.1.7-x86_64.AppImage | 実行権限を付けて起動。Ubuntu 24.04相当・glibc 2.39以降が対象です。 |
+| Arch Linux x86_64 | `cassette-studio-0.1.7-1-x86_64.pkg.tar.zst` | システムを更新後、`sudo pacman -U ./cassette-studio-0.1.7-1-x86_64.pkg.tar.zst`で導入します。 |
+| macOS 15以降・Apple Silicon | `CassetteStudio-0.1.7-macOS-arm64.zip` | 展開し、`Cassette Studio.app`をアプリケーションへ移動。下記のmacOS手順で外部音声ツールを導入します。 |
+| macOS 15以降・Intel | `CassetteStudio-0.1.7-macOS-x64.zip` | Intel用アーカイブを選び、同じ手順で導入します。 |
 
-公開用の配布ファイルには、アプリ本体・日英の説明・画面画像・依存ライブラリのライセンスを含めています。外部音声ツールは同梱せず、別途導入します。Windowsの初回ツール取得にはネット接続が必要です。URL取り込みには[Node.js 22以上](https://nodejs.org/ja/download)、Linuxでは最新の[yt-dlp](https://github.com/yt-dlp/yt-dlp#installation)も用意してください。ローカル音声の取り込みにはNodeやyt-dlpは不要です。通常利用にRustは必要ありません。配布ファイルの検証にはリリースのSHA256SUMS.txtを使用できます。
+公開用の配布ファイルには、アプリ本体・日英の説明・画面画像・依存ライブラリのライセンスを含めています。Windows・Ubuntu DEB・Linux従来版・macOS・Arch版では外部音声ツールを別途導入します。Flatpak／AppImageには音声・URLツールを同梱します。Windowsの初回ツール取得にはネット接続が必要です。外部ツールを別途導入する形式のURL取り込みには[Node.js 22以上](https://nodejs.org/ja/download)、従来のLinux版では最新の[yt-dlp](https://github.com/yt-dlp/yt-dlp#installation)も用意してください。ローカル音声の取り込みにはNodeやyt-dlpは不要です。通常利用にRustは必要ありません。配布ファイルの検証にはリリースのSHA256SUMS.txtを使用できます。
 
-スクリーンショットは、架空の曲名を使ったWindows単体アプリの画面です。プラットフォームにより外観が多少異なります。
+スクリーンショットは、架空の曲名を使ったWindows単体アプリとLinux同梱版の画面です。プラットフォームにより外観が多少異なります。
 
 ![ライブラリと再生コントロール](docs/screenshots/library-ja.jpg)
 
@@ -31,7 +33,7 @@ Rustで動作する、カセットテープ用プレイリスト編集・音声�
 
 ## ソースから作成するローカル同梱版
 
-以下はpackage-windows.ps1・package-linux.shで手元に作成する同梱版の説明です。GitHub Releasesの公開版は冒頭の手順で導入してください。公開版には外部音声ツールを同梱していません。
+以下はpackage-windows.ps1・package-linux.shで手元に作成する同梱版の説明です。GitHub Releasesの公開版は冒頭の手順で導入してください。Windows・DEB・従来のLinux・macOS・Archの公開版は外部音声ツールを別途導入します。Flatpak／AppImageは別の同梱手順を使います。
 
 - Windows：ビルド先の `CassetteStudio.exe` をダブルクリック。別PCへ移す場合は `dist/CassetteStudio-Windows-x64.zip` を展開し、フォルダ内のCassetteStudio.exeを起動してください。FFmpeg・FFprobe・yt-dlp・Nodeを同梱しています。WindowsのWebView2ランタイムを使用します。
 - Ubuntu 24.04以降のx64：`dist/CassetteStudio-Ubuntu24-amd64.deb` を `sudo apt install ./CassetteStudio-Ubuntu24-amd64.deb` でインストールし、アプリ一覧のCassette Studioを起動します。GTK/WebKitGTK・FFmpegなどはパッケージの依存関係として導入されます。yt-dlpとNodeを同梱します。
@@ -79,20 +81,20 @@ Arch公式コンテナ内で、Archのパッケージを使ってソースから
 
 ```sh
 sudo pacman -Syu
-sudo pacman -U ./cassette-studio-0.1.6-1-x86_64.pkg.tar.zst
+sudo pacman -U ./cassette-studio-0.1.7-1-x86_64.pkg.tar.zst
 cassette-studio
 ```
 
 アプリ一覧からも起動できます。ブラウザ版は`cassette-studio-browser`です。FFmpeg・WebKitGTK 4.1などの実行時依存はpacmanが解決します。URL取り込みを使う場合は`yt-dlp`・`nodejs`も導入してください。ファイル選択にはデスクトップのポータルが必要です。GTK／Xfce環境で適切なバックエンドが未設定なら`xdg-desktop-portal-gtk`を導入します。
 
-再ビルドする場合は、同じリリースから**PKGBUILD**と**CassetteStudio-0.1.6-Arch-source.tar.gz**を空のフォルダへ取得し、PKGBUILDの内容を確認してから一般ユーザーで実行します。
+再ビルドする場合は、同じリリースから**PKGBUILD**と**CassetteStudio-0.1.7-Arch-source.tar.gz**を空のフォルダへ取得し、PKGBUILDの内容を確認してから一般ユーザーで実行します。
 
 ```sh
 sudo pacman -S --needed base-devel rust pkgconf python
 makepkg -si
 ```
 
-ソースはPKGBUILD内のSHA-256と照合します。このソースアーカイブはArch用の梱包処理と更新済みドキュメントを含むスナップショットで、アプリのバージョンは0.1.6です。テンプレートは`packaging/arch/PKGBUILD.in`、チェックサム付きのファイル作成は`scripts/prepare-arch-package.py`です。
+ソースはPKGBUILD内のSHA-256と照合します。このソースアーカイブはArch用の梱包処理と更新済みドキュメントを含むスナップショットで、アプリのバージョンは0.1.7です。テンプレートは`packaging/arch/PKGBUILD.in`、チェックサム付きのファイル作成は`scripts/prepare-arch-package.py`です。
 
 GitHubから提供する配布物で、Arch公式リポジトリやAURへの登録はしていません。ローリングリリースのため、システムライブラリの更新後には再ビルドが必要になる場合があります。CIではパッケージ導入、Xvfb上の専用ウィンドウ起動、音源取り込み、DC／フェードを含むWAV生成、内蔵画面ファイルを確認します。物理音声出力・デッキ録音や、すべてのデスクトップ／Wayland環境を検証するものではありません。
 
@@ -117,7 +119,7 @@ brew install yt-dlp node
 ```sh
 cargo run --release --features desktop --bin cassette-studio-desktop --locked
 # 現在のMacのアーキテクチャ用パッケージを作成:
-sh scripts/package-public-macos.sh 0.1.6
+sh scripts/package-public-macos.sh 0.1.7
 ```
 
 Apple Silicon／Intelは別々に作成します。`scripts/test-macos-package.py`は合成音源と一時ライブラリで、配布アプリとブラウザ用実行ファイルを検証します。物理的な再生・録音の確認を代替するものではありません。
@@ -257,7 +259,7 @@ Shift_JIS/CP932の日本語タグがLatin-1として読み取られ、制御文�
 
 ## 公開用パッケージの作成
 
-Windowsはscripts/package-public-windows.ps1、Linuxはビルド後にscripts/package-public-linux.sh、macOSは各Mac環境でscripts/package-public-macos.shを使用します。dist/releases/v0.1.6/へアプリ本体のみの配布ファイルを作ります。依存関係のライセンス収集にPython 3とRustに付属する著作権表示ファイルが必要です。従来のpackage-windows.ps1・package-linux.shは外部ツール同梱のローカル用パッケージを作成する補助スクリプトで、公開リリースには使用しません。
+Windowsはscripts/package-public-windows.ps1、Linuxの全形式はビルド後にscripts/package-all-linux.sh、macOSは各Mac環境でscripts/package-public-macos.shを使用します。dist/releases/v0.1.7/へ配布ファイルを作ります。依存関係のライセンス収集にPython 3とRustに付属する著作権表示ファイルが必要です。従来のpackage-windows.ps1・package-linux.shは外部ツール同梱のローカル用パッケージを作成する補助スクリプトで、公開リリースには使用しません。
 
 ## DCオフセットの除去
 
@@ -306,3 +308,11 @@ LUFSグラフの設定・数値・曲一覧は左側、グラフは右側に表�
 ![LUFS SIDE A](docs/screenshots/lufs-side-a-ja.jpg)
 
 ![LUFS SIDE B](docs/screenshots/lufs-side-b-ja.jpg)
+
+## Linux共通パッケージ
+
+Flatpak／AppImageを配布対象に追加しました。通常版とは保存先を分けて併用できます。[導入・保存先・ビルド手順](docs/linux-bundles.ja.md)を参照してください。
+
+![Linux Flatpak](docs/screenshots/linux-flatpak-ja.jpg)
+
+![Linux AppImage](docs/screenshots/linux-appimage-ja.jpg)

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.syouth2002.CassetteStudio</id>
+  <name>Cassette Studio</name>
+  <summary>Arrange cassette mixtapes, analyze loudness and design J-CARDs</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <launchable type="desktop-id">io.github.syouth2002.CassetteStudio.desktop</launchable>
+  <description><p>Arrange audio and video into A/B cassette sides, normalize loudness, analyze LUFS and export WAV audio. Design two-sided J-CARD artwork and export printable PDF files.</p></description>
+  <url type="homepage">https://github.com/syouth2002/CassetteStudio</url>
+  <developer id="io.github.syouth2002"><name>syouth2002</name></developer>
+  <provides><binary>cassette-studio</binary></provides>
+  <releases><release version="0.1.7" date="2026-11-02"/></releases>
+  <content_rating type="oars-1.1"/>
+</component>

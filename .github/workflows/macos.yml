@@ -45,13 +45,13 @@ jobs:
       - name: Build and package
         run: |
           if [ -n "$SOURCE_RUN" ]; then
-            export CASSETTE_PREBUILT_ARCHIVE="$PWD/dist/prebuilt/CassetteStudio-0.1.6-macOS-${{ matrix.arch }}.zip"
+            export CASSETTE_PREBUILT_ARCHIVE="$PWD/dist/prebuilt/CassetteStudio-0.1.7-macOS-${{ matrix.arch }}.zip"
           fi
-          sh scripts/package-public-macos.sh 0.1.6
+          sh scripts/package-public-macos.sh 0.1.7
       - name: Native app and audio smoke test
-        run: python3 scripts/test-macos-package.py dist/releases/v0.1.6/macos-${{ matrix.arch }}
+        run: python3 scripts/test-macos-package.py dist/releases/v0.1.7/macos-${{ matrix.arch }}
       - uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}
-          path: dist/releases/v0.1.6/CassetteStudio-0.1.6-macOS-${{ matrix.arch }}.zip
+          path: dist/releases/v0.1.7/CassetteStudio-0.1.7-macOS-${{ matrix.arch }}.zip
           if-no-files-found: error

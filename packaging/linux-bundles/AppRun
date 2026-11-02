@@ -1,0 +1,30 @@
+#!/bin/sh
+set -eu
+bundle=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+export APPDIR="$bundle"
+: "${XDG_DATA_HOME:=$HOME/.local/share}"
+export CASSETTE_DATA="${CASSETTE_DATA:-$XDG_DATA_HOME/cassette-studio-appimage}"
+export CASSETTE_PORT="${CASSETTE_PORT:-0}"
+export CASSETTE_FFMPEG="${CASSETTE_FFMPEG:-$bundle/usr/bin/ffmpeg}"
+export CASSETTE_FFPROBE="${CASSETTE_FFPROBE:-$bundle/usr/bin/ffprobe}"
+export CASSETTE_YT_DLP="${CASSETTE_YT_DLP:-$bundle/usr/bin/yt-dlp}"
+export PATH="$bundle/usr/bin:$PATH"
+export LD_LIBRARY_PATH="$bundle/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export XDG_DATA_DIRS="$bundle/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+export GSETTINGS_SCHEMA_DIR="$bundle/usr/share/glib-2.0/schemas"
+export WEBKIT_EXEC_PATH="$bundle/usr/lib/webkit2gtk-4.1"
+export WEBKIT_INJECTED_BUNDLE_PATH="$bundle/usr/lib/webkit2gtk-4.1/injected-bundle"
+export GST_PLUGIN_SYSTEM_PATH_1_0="$bundle/usr/lib/gstreamer-1.0"
+export GST_PLUGIN_SCANNER_1_0="$bundle/usr/libexec/gstreamer-1.0/gst-plugin-scanner"
+export FONTCONFIG_FILE="$bundle/usr/share/cassette-studio/fonts.conf"
+export GTK_USE_PORTAL=1
+original_gdk_backend="${GDK_BACKEND-}"
+# linuxdeploy's GTK hook configures relocatable pixbuf/GTK module paths.
+if [ -d "$bundle/apprun-hooks" ]; then
+  for hook in "$bundle"/apprun-hooks/*.sh; do [ ! -f "$hook" ] || . "$hook"; done
+fi
+if [ -n "$original_gdk_backend" ]; then export GDK_BACKEND="$original_gdk_backend"; else unset GDK_BACKEND; fi
+if [ "${CASSETTE_BROWSER:-0}" = 1 ]; then
+  exec "$bundle/usr/bin/cassette-studio-browser" "$@"
+fi
+exec "$bundle/usr/bin/cassette-studio-desktop" "$@"

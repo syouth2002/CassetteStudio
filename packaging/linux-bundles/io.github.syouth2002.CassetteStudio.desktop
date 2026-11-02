@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Cassette Studio (Flatpak)
+Comment=Prepare cassette mixtapes and J-CARD artwork
+Comment[ja]=カセットテープの選曲・録音準備とJ-CARD編集
+Exec=cassette-studio
+Icon=io.github.syouth2002.CassetteStudio
+Terminal=false
+Categories=AudioVideo;Audio;
