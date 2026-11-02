@@ -24,6 +24,7 @@ async function init() {
 bindCommonControls();
 bindLibraryControls();
 bindAnalysisControls();
+bindLoudnessGraphControls();
 bindEntriesControls();
 bindSettingsControls();
 bindPlaybackControls();

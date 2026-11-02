@@ -16,6 +16,7 @@
 | `src/audio/metadata.rs` | 日本語タグの文字コード補正と関連テスト。 |
 | `src/audio/import.rs` | 音源の情報取得、ローカル／URL音源の取り込み。 |
 | `src/audio/analysis.rs` | 前後の無音・ラウドネス・左右のDCオフセットの測定。 |
+| `src/audio/graph.rs` | 選択範囲のEBU R128時系列・実出力補正の測定、解析キャッシュ。 |
 | `src/audio/processing.rs` | DC補正フィルター、一定のゲイン補正とピーク保護、試聴キャッシュ名。 |
 | `src/audio/render.rs` | 曲間・フェードを反映したWAV組み立てと、曲全体の試聴音声生成。 |
 | `src/audio/tests.rs` | ゲイン、DC、キャッシュ、無音範囲、旧データの単体テスト。 |
@@ -43,6 +44,7 @@
 | `web/js/export.js` | 書き出し要求、カセット別の生成済み音声と保存リンク。 |
 | `web/js/audio/player.js` | 再生・シーク・曲間・曲送り・停止の制御。 |
 | `web/js/audio/reference-tone.js` | 基準音のWAV生成と再生・停止。 |
+| `web/js/audio/loudness-graph.js` | LUFSグラフ画面、測定窓の切り替え、選択曲の解析要求。 |
 | `web/js/audio/loudness.js` | 解析済みデータから表示用の補正量を計算。実際の補正はRust側。 |
 | `web/js/buttons/` | 操作イベントの登録。ライブラリ、解析、範囲編集、設定、再生、共通処理に分割。 |
 | `web/i18n.js` / `web/en.json` | 言語の選択、翻訳、表示言語の保存。 |
@@ -64,3 +66,5 @@
 `node scripts/test-frontend-startup.cjs`は、起動したエンジンが配信するHTMLから実際の読み込み順で全スクリプトを取得し、テスト用DOMで起動・ボタン登録・通知・基準音・自動設定・言語切替を確認します。ブラウザの見た目や実音声出力を検証するテストではありません。
 
 既存の画面側テストも、関数を一行の文字列として抜き出す方式から、役割別ファイルを直接読み込む方式へ変更しています。整形やファイル移動でテストが壊れにくい構成です。
+
+LUFSグラフの面全体解析は`audio/graph.rs`から既存の`render.rs`を呼び、先頭・曲間・末尾の無音を含む一時WAVを測定します。曲単位の時系列を単純連結しないため、測定窓とゲートは面全体で連続します。音源・曲順・設定を含むキーで結果を保存し、一時音声は削除します。`test-lufs-side-graph.mjs`でWAVとの一致やキャッシュ、`test-lufs-graph-ui.cjs`で面切り替え・古い応答の無視を検証します。

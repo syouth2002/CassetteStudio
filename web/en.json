@@ -400,5 +400,17 @@
   "SIDE Bの曲一覧": "Side B track list",
   "「曲一覧を更新」で、連動先の内容に置き換えます。書式と配置は保持します。": "Refresh track lists replaces this text with its linked content, keeping formatting and placement.",
   "最新のミックスリストを反映しました": "Updated from the latest mix list",
-  "曲一覧に連動するボックスがありません。右ペインの「連動する内容」を指定してください。": "No boxes are linked to track lists. Choose Linked content in the right pane."
+  "曲一覧に連動するボックスがありません。右ペインの「連動する内容」を指定してください。": "No boxes are linked to track lists. Choose Linked content in the right pane.",
+  "LUFSグラフ": "LUFS graph",
+  "測定窓": "Measurement window",
+  "灰色：補正前 ／ 緑：録音設定適用後": "Gray: original / Green: recording settings applied",
+  "選択した再生範囲を解析します。先頭の測定窓が満たない部分と無音は線を表示しません。": "Measures the selected playback range. No line is shown before a full measurement window is available or during silence.",
+  "LUFSを解析しています…": "Analyzing LUFS…",
+  "解析に失敗しました": "Analysis failed",
+  "補正前：{0}　録音設定適用後：{1}": "Original: {0} / Recording settings applied: {1}",
+  "目標：{0} LUFS（破線）": "Target: {0} LUFS (dashed line)",
+  "A/B面のLUFSグラフ": "A/B side LUFS graph",
+  "解析する面": "Side to analyze",
+  "面全体を解析します。先頭・曲間・末尾の無音とフェードを含みます。灰色は音量・DC補正前、番号は曲の開始位置です。": "Measures the complete side, including leading/trailing silence, gaps and fades. Gray shows audio before gain/DC correction; numbers mark track starts.",
+  "補正前：{0}\n録音設定適用後：{1}": "Original: {0}\nRecording settings applied: {1}"
 }

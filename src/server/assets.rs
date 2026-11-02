@@ -4,6 +4,15 @@ use axum::{Router, response::Html, routing::get};
 pub(super) fn routes() -> Router<App> {
     Router::new()
         .route(
+            "/js/audio/loudness-graph.js",
+            get(|| async {
+                (
+                    [("content-type", "text/javascript; charset=utf-8")],
+                    include_str!("../../web/js/audio/loudness-graph.js"),
+                )
+            }),
+        )
+        .route(
             "/js/jcard/model.js",
             get(|| async {
                 (

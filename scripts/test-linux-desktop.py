@@ -11,7 +11,7 @@ for attempt in range(100):
     except (OSError,urllib.error.URLError):time.sleep(.2)
 else:raise RuntimeError((test_dir/'window.log').read_text())
 time.sleep(3)
-assert status['version']=='0.1.5' and status['ffmpeg'] and status['ffprobe'],status
+assert status['version']=='0.1.6' and status['ffmpeg'] and status['ffprobe'],status
 assert 'Cassette' in get('/').read().decode()
 catalog=json.load(get('/en.json'));assert catalog['すべての曲']=='All tracks'
 source=test_dir/'quiet.wav'
@@ -33,3 +33,8 @@ preview=post('/api/preview/'+t['id'],s);assert preview['track']['loudness']
 result={'passed':True,'platform':'Ubuntu 24.04 x64 / WSL2 / Xvfb','checks':['native window startup','English catalog','audio import','loudness analysis','normalized WAV export','exact duration','preview'],'status':status}
 (project/'work/linux-desktop-result.json').write_text(json.dumps(result,indent=2))
 print('PASS: Linux native desktop startup, import, loudness, WAV export, preview, English catalog')
+
+from check_lufs_native import check_lufs
+payload={'id':'','name':'Linux LUFS test','kind':'cassette','tracks':[],'sides':[[entry],[entry]],'settings':{**s,'lead_in':.5}}
+saved=post('/api/collections',payload)
+check_lufs(base,t['id'],saved['id'])

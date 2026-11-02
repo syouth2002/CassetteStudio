@@ -27,6 +27,8 @@ function drawSelection() {
     ? csText("{0}曲選択", selected.size)
     : "";
   $("adjust-volume").disabled = selected.size !== 1;
+  $("lufs-open").disabled = selected.size !== 1 || busy > 0;
+  $("lufs-side-open").disabled = busy > 0;
   $("edit-entry").disabled = selected.size !== 1;
   $("move-side").disabled = !selected.size;
   $("remove-selected").disabled = !selected.size || busy > 0;
@@ -73,6 +75,7 @@ function draw() {
     "cassette-overview",
     "side-tabs",
     "export-btn",
+    "lufs-side-open",
     "record-btn",
     "move-side",
     "edit-entry",
@@ -88,6 +91,8 @@ function draw() {
     : "";
   $("select-all").checked = list.length > 0 && selected.size === list.length;
   $("adjust-volume").disabled = selected.size !== 1;
+  $("lufs-open").disabled = selected.size !== 1 || busy > 0;
+  $("lufs-side-open").disabled = busy > 0;
   $("select-all").indeterminate =
     selected.size > 0 && selected.size < list.length;
   $("make-manual").hidden = tape;

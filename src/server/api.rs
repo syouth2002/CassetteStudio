@@ -28,6 +28,11 @@ pub(super) fn routes(root: &std::path::Path) -> Router<App> {
         .route("/api/preview/{id}", post(preview))
         .route("/api/reanalyze", put(reanalyze))
         .route("/api/loudness", post(loudness))
+        .route("/api/tracks/{id}/loudness-graph", post(loudness_graph))
+        .route(
+            "/api/collections/{id}/loudness-graph",
+            post(side_loudness_graph),
+        )
         .route("/api/tracks/{id}/gain", put(manual_gain))
         .route("/api/tracks", delete(remove_tracks))
         .nest_service("/media", ServeDir::new(root.join("preview")))
@@ -441,4 +446,78 @@ async fn reanalyze(State(app): State<App>, Json(body): Json<ReanalyzeRequest>) -
         Ok(())
     })?;
     Ok(Json(app.snapshot()?))
+}
+
+#[derive(Deserialize)]
+struct GraphRequest {
+    settings: Settings,
+    entry: Option<Entry>,
+}
+async fn loudness_graph(
+    State(app): State<App>,
+    Path(id): Path<String>,
+    Json(request): Json<GraphRequest>,
+) -> Api<audio::Graph> {
+    request.settings.validate()?;
+    if request.entry.as_ref().is_some_and(|e| e.track_id != id) {
+        return Err(Error("Invalid track selection".into()));
+    }
+    app.ensure_loudness(std::slice::from_ref(&id)).await?;
+    let t = app
+        .snapshot()?
+        .tracks
+        .into_iter()
+        .find(|t| t.id == id)
+        .ok_or(Error("曲が見つかりません".into()))?;
+    let root = app.root.clone();
+    Ok(Json(
+        app.work(move || audio::graph(&root, &t, &request.settings, request.entry.as_ref()))
+            .await?,
+    ))
+}
+
+#[derive(Deserialize)]
+struct SideGraphRequest {
+    side: usize,
+}
+async fn side_loudness_graph(
+    State(app): State<App>,
+    Path(id): Path<String>,
+    Json(request): Json<SideGraphRequest>,
+) -> Api<serde_json::Value> {
+    if request.side > 1 {
+        return Err(Error("Invalid cassette side".into()));
+    }
+    let find = |lib: Library| {
+        lib.collections
+            .into_iter()
+            .find(|c| c.id == id && c.kind == "cassette")
+            .ok_or(Error("カセットが見つかりません".into()))
+    };
+    let c = find(app.snapshot()?)?;
+    planner::validate_entries(
+        &[c.sides[request.side].clone(), vec![]],
+        &app.snapshot()?.tracks,
+        &c.settings,
+    )?;
+    let ids = c.sides[request.side]
+        .iter()
+        .map(|e| e.track_id.clone())
+        .collect::<Vec<_>>();
+    app.ensure_loudness(&ids).await?;
+    let lib = app.snapshot()?;
+    let c = find(lib.clone())?;
+    let root = app.root.clone();
+    let target = c.settings.target_lufs;
+    let title = format!(
+        "{} / SIDE {}",
+        c.name,
+        if request.side == 0 { "A" } else { "B" }
+    );
+    let graph = app
+        .work(move || audio::side_graph(&root, &lib.tracks, &c.sides[request.side], &c.settings))
+        .await?;
+    Ok(Json(
+        serde_json::json!({"graph":graph,"target_lufs":target,"title":title}),
+    ))
 }

@@ -1,5 +1,6 @@
 """Check the packaged native app and CLI using an isolated synthetic library."""
 import urllib.error
+from check_lufs_native import check_lufs
 import json,os,pathlib,subprocess,sys,tempfile,time,urllib.request,wave,math,struct,plistlib
 stage=pathlib.Path(sys.argv[1]).resolve()
 app=stage/'Cassette Studio.app'
@@ -59,6 +60,7 @@ with tempfile.TemporaryDirectory(prefix='cassette-macos-') as folder:
                 payload={'id':'','name':'Native smoke cassette','kind':'cassette','tracks':[], 'sides':[[entry],[entry]],'settings':settings}
                 req=urllib.request.Request(base+'/api/collections',data=json.dumps(payload).encode(),headers={'Content-Type':'application/json'})
                 saved=json.load(urllib.request.urlopen(req,timeout=60))
+                check_lufs(base,track['id'],saved['id'])
                 card={'version':2,'front':65,'spine':12,'flap':25,'height':100,'paper':'letter','margin':5,'extensions':[65,65],'background':'#ffffff','backBackground':'#ffffff','elements':[],'backElements':[{'id':'inside','kind':'text','x':134,'y':8,'w':27,'h':86,'rotation':37,'size':8,'lineHeight':1.3,'text':'内側 / Inside','binding':'sideA'}]}
                 cardurl=base+'/api/jcards/'+saved['id']
                 assert json.load(urllib.request.urlopen(cardurl)) is None

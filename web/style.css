@@ -969,3 +969,31 @@ label select {
   width: 100%;
   min-width: 0;
 }
+
+/* Reserve the full dialog height for the graph; settings stay in a left rail. */
+#lufs-dialog {
+  width: min(1160px, 96vw);
+  max-width: 96vw;
+  height: min(780px, 90vh);
+  max-height: 90vh;
+  padding: 20px;
+  overflow: hidden;
+}
+#lufs-dialog .dialog-heading { margin-bottom: 14px; }
+#lufs-dialog p { margin: 0 0 14px; overflow-wrap: anywhere; }
+.lufs-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 20px; height: calc(100% - 42px); min-height: 0; }
+.lufs-controls { min-height: 0; overflow-y: auto; padding-right: 12px; border-right: 1px solid var(--line); font-size: 12px; }
+#lufs-title { font-weight: 600; font-size: 14px; }
+#lufs-dialog label { display: flex; flex-direction: column; align-items: stretch; gap: 6px; margin-bottom: 14px; }
+#lufs-dialog select { width: 100%; min-width: 0; }
+#lufs-stats { white-space: pre-line; line-height: 1.8; }
+#lufs-tracks { line-height: 1.7; white-space: pre-line; }
+#lufs-note { color: var(--muted); line-height: 1.6; }
+#lufs-plot { min-width: 0; min-height: 0; height: 100%; }
+#lufs-plot svg { display: block; width: 100%; height: 100%; }
+@media (max-width: 700px) {
+  #lufs-dialog { overflow-y: auto; }
+  .lufs-layout { grid-template-columns: 1fr; height: auto; }
+  .lufs-controls { overflow: visible; border-right: 0; padding-right: 0; }
+  #lufs-plot { height: 420px; }
+}

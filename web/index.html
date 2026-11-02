@@ -128,6 +128,8 @@
             <span id="selection-count"></span
             ><button id="adjust-volume" disabled>
               <span data-i18n="音量調整">音量調整</span></button
+            ><button id="lufs-open" class="workspace-action" disabled>
+              <span data-i18n="LUFSグラフ">LUFSグラフ</span></button
             ><button id="edit-entry" hidden>
               <span data-i18n="再生範囲・フェード"
                 >再生範囲・フェード</span
@@ -194,6 +196,9 @@
             ></span
           >
           <div>
+            <button id="lufs-side-open" class="workspace-action" hidden>
+              <span data-i18n="A/B面のLUFSグラフ">A/B面のLUFSグラフ</span>
+            </button>
             <button id="record-btn" hidden>
               <span data-i18n="● デッキ録音用に準備"
                 >● デッキ録音用に準備</span
@@ -680,6 +685,48 @@
         </button>
       </div>
     </dialog>
+    <dialog id="lufs-dialog">
+      <div class="dialog-heading">
+        <h2 data-i18n="LUFSグラフ">LUFSグラフ</h2>
+        <button class="icon-btn" data-close="lufs-dialog" aria-label="Close">
+          ×
+        </button>
+      </div>
+      <div class="lufs-layout">
+        <aside class="lufs-controls">
+          <p id="lufs-title"></p>
+          <div id="lufs-side-row" hidden>
+            <label
+              ><span data-i18n="解析する面">解析する面</span
+              ><select id="lufs-side">
+                <option value="0">SIDE A</option>
+                <option value="1">SIDE B</option>
+              </select></label
+            >
+          </div>
+          <label
+            ><span data-i18n="測定窓">測定窓</span>
+            <select id="lufs-window">
+              <option value="short_term">Short-term (3 s)</option>
+              <option value="momentary">Momentary (400 ms)</option>
+            </select></label
+          >
+          <p data-i18n="灰色：補正前 ／ 緑：録音設定適用後">
+            灰色：補正前 ／ 緑：録音設定適用後
+          </p>
+          <p id="lufs-target"></p>
+          <p id="lufs-stats"></p>
+          <p id="lufs-tracks" class="hint"></p>
+          <p
+            id="lufs-note"
+            data-i18n="選択した再生範囲を解析します。先頭の測定窓が満たない部分と無音は線を表示しません。"
+          >
+            選択した再生範囲を解析します。先頭の測定窓が満たない部分と無音は線を表示しません。
+          </p>
+        </aside>
+        <div id="lufs-plot"></div>
+      </div>
+    </dialog>
     <dialog id="gain-dialog">
       <form id="gain-form">
         <div class="dialog-heading">
@@ -1037,6 +1084,7 @@
     <script src="/js/export.js"></script>
     <script src="/js/view.js"></script>
     <script src="/js/audio/loudness.js"></script>
+    <script src="/js/audio/loudness-graph.js"></script>
     <script src="/js/audio/player.js"></script>
     <script src="/js/audio/reference-tone.js"></script>
     <script src="/js/buttons/common.js"></script>

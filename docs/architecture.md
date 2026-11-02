@@ -6,7 +6,7 @@ See [the Japanese guide](architecture.ja.md) for a complete file-by-file table.
 
 - `src/lib.rs`: the shared public startup API.
 - `src/server/`: lifecycle and route composition (`mod.rs`), embedded resources (`assets.rs`), HTTP operations (`api.rs`), library ownership/persistence/job coordination (`state.rs`), file identity/legacy lookup/upload cleanup (`imports.rs`), and origin checks (`security.rs`).
-- `src/audio/`: a small facade (`mod.rs`), external tools (`tools.rs`), tag recovery (`metadata.rs`), media ingestion (`import.rs`), measurements (`analysis.rs`), DC/gain filters and preview identity (`processing.rs`), WAV/preview generation (`render.rs`), and unit tests (`tests.rs`).
+- `src/audio/`: a small facade (`mod.rs`), external tools (`tools.rs`), tag recovery (`metadata.rs`), media ingestion (`import.rs`), measurements (`analysis.rs`), cached EBU R128 time series (`graph.rs`), DC/gain filters and preview identity (`processing.rs`), WAV/preview generation (`render.rs`), and unit tests (`tests.rs`).
 - `src/model.rs`: persisted data types and setting validation.
 - `src/planner.rs`: cassette arrangement and capacity checks.
 - `src/bin/desktop.rs` and `src/main.rs`: native-window and browser-engine entry points.
@@ -20,7 +20,7 @@ Preview and WAV generation continue to share the same DC/gain calculations. The 
 - `web/js/core.js`, `state.js`, `api.js`, `dialogs.js`: formatting/DOM helpers, shared state, HTTP/persistence, and notification/prompt UI.
 - `web/js/view.js`: sidebar, track lists, cassette capacity and selection rendering.
 - `web/js/library.js`, `cassette.js`, `settings.js`, `export.js`: feature/data operations, fitting/arrangement, settings forms, and rendering/download caches.
-- `web/js/audio/`: music playback, reference tones and loudness display calculations.
+- `web/js/audio/`: music playback, reference tones, loudness display calculations, and the selected-track LUFS graph (`loudness-graph.js`).
 - `web/js/buttons/`: event bindings grouped by library, analysis, range editing, settings, playback and shared behavior.
 - `web/i18n.js` and `web/en.json`: language selection, translation and preference persistence.
 
@@ -33,3 +33,5 @@ For changes, edit `view.js`/CSS for presentation, `buttons/` for controls, `cass
 Run the README's Rust, frontend and synthetic audio integration checks. `node scripts/test-frontend-startup.cjs` starts an isolated engine, reads its HTML, loads every served script in real order, and exercises startup/bindings/notifications/reference-tone lifecycle/auto fit/language switching using a test DOM. It does not verify browser layout or physical audio output.
 
 Frontend regression tests load the relevant files directly instead of extracting one-line functions from source text.
+
+Whole-side LUFS analysis in `audio/graph.rs` reuses `render.rs` to measure a temporary WAV with leading/trailing silence and gaps. It does not concatenate per-track measurements: windows and gating remain continuous across the side. Cache keys include sources, order and settings; temporary audio is removed. `test-lufs-side-graph.mjs` checks WAV agreement and caching; `test-lufs-graph-ui.cjs` checks side switching and stale-response protection.
