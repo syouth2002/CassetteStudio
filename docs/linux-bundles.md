@@ -5,7 +5,7 @@ Flatpak is the primary format for one package across distributions; AppImage is 
 ## Flatpak
 
     flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-    flatpak install --user ./CassetteStudio-0.1.7-x86_64.flatpak
+    flatpak install --user ./CassetteStudio-0.1.8-x86_64.flatpak
     flatpak run io.github.syouth2002.CassetteStudio//local
 
 GTK/WebKitGTK come from GNOME 49. FFmpeg, FFprobe, yt-dlp and Node.js are supplied inside the package. Host tools are unchanged. Initial installation needs network access and runtime disk space. The launcher is named Cassette Studio (Flatpak). This is a local bundle, not an approved Flathub listing.
@@ -14,12 +14,12 @@ Display, audio and network access are permitted. Host files are readable, preser
 
 ## AppImage
 
-    chmod +x CassetteStudio-0.1.7-x86_64.AppImage
-    ./CassetteStudio-0.1.7-x86_64.AppImage
+    chmod +x CassetteStudio-0.1.8-x86_64.AppImage
+    ./CassetteStudio-0.1.8-x86_64.AppImage
 
 For systems without FUSE:
 
-    APPIMAGE_EXTRACT_AND_RUN=1 ./CassetteStudio-0.1.7-x86_64.AppImage
+    APPIMAGE_EXTRACT_AND_RUN=1 ./CassetteStudio-0.1.8-x86_64.AppImage
 
 GTK/WebKitGTK, helpers, WAV playback plugins and media/URL tools are bundled. Base OS libraries and graphics drivers remain relevant. This build targets Ubuntu 24.04 or newer compatible systems with glibc 2.39+. Older distributions are not guaranteed. Prefer Flatpak when a common runtime is the goal.
 
@@ -43,7 +43,7 @@ Use --resume for an interrupted staging build. Downloads are verified against to
 
 Install the test Flatpak in your user installation, then run:
 
-    sh scripts/test-linux-bundles.sh --appimage ./dist/linux-bundles/CassetteStudio-0.1.7-x86_64.AppImage
+    sh scripts/test-linux-bundles.sh --appimage ./dist/linux-bundles/CassetteStudio-0.1.8-x86_64.AppImage
 
 The synthetic test checks importing, DC/LUFS, A/B sides, 48 kHz WAV, J-CARD persistence and three simultaneous formats with separate stores/ports. Personal libraries are never used. Current validation is on Ubuntu 24.04 / WSL2. Other distributions, real Wayland sessions, physical audio and drag/drop/save-portal combinations need additional checks; universal Linux compatibility is not claimed.
 

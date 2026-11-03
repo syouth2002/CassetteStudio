@@ -52,7 +52,14 @@ impl App {
                 .iter()
                 .find(|t| &t.id == id)
                 .ok_or(Error("曲が見つかりません".into()))?;
-            if t.loudness.is_none() || t.dc.is_none() {
+            if t.loudness.is_none()
+                || t.dc.is_none()
+                || t.mono.is_none()
+                || (t.pseudo_stereo != 0
+                    && t.pseudo_analysis
+                        .as_ref()
+                        .is_none_or(|a| a.strength != t.pseudo_stereo))
+            {
                 missing.push(t.clone());
             }
         }
@@ -81,6 +88,10 @@ impl App {
                     }
                     old.loudness = t.loudness;
                     old.dc = t.dc;
+                    old.mono = t.mono;
+                    if old.pseudo_stereo == t.pseudo_stereo {
+                        old.pseudo_analysis = t.pseudo_analysis;
+                    }
                 }
                 Ok(())
             })?;

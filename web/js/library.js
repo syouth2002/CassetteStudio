@@ -12,6 +12,8 @@ function mergeMeasurements(tracks) {
     if (old) {
       old.loudness = t.loudness;
       old.dc = t.dc;
+      old.mono = t.mono;
+      if (old.pseudo_stereo === t.pseudo_stereo) old.pseudo_analysis = t.pseudo_analysis;
     }
   }
 }
@@ -175,4 +177,24 @@ async function attachTracks(ids, destination = active) {
   renderCache = null;
   await persist(c);
   return skipped;
+}
+
+
+// Fill legacy classification without rerunning silence, gain or DC analysis.
+// Work in small batches so the library remains usable and results appear promptly.
+async function detectMissingMono() {
+  const ids = lib.tracks.filter((t) => t.mono == null).map((t) => t.id);
+  let errors = 0;
+  for (let i = 0; i < ids.length; i += 8) {
+    const pending = ids.slice(i, i + 8).filter((id) => track(id)?.mono == null);
+    if (!pending.length) continue;
+    const data = await api("/api/mono", { tracks: pending });
+    for (const result of data.tracks) {
+      const t = track(result.id);
+      if (t && t.mono == null) t.mono = result.mono;
+    }
+    errors += data.errors || 0;
+    draw();
+  }
+  if (errors) toast(csText("モノラルを判定できない曲がありました。音声ツールと音源を確認してください"));
 }

@@ -67,6 +67,9 @@ pub fn analyze(
         trim_start,
         trim_end,
         manual_gain_db: 0.0,
+        mono: None,
+        pseudo_stereo: 0,
+        pseudo_analysis: None,
         loudness: None,
         dc: None,
     };

@@ -1,10 +1,12 @@
 "use strict";
 // Entry point: register controls once, then load the library after localization.
 async function init() {
+  let canAnalyze = false;
   await task(csText("ライブラリを読み込んでいます…"), async () => {
     lib = await api("/api/library");
     draw();
     const s = await api("/api/status");
+    canAnalyze = s.ffmpeg && s.ffprobe;
     $("tool-status").textContent =
       s.ffmpeg && s.ffprobe
         ? csText(
@@ -19,6 +21,7 @@ async function init() {
         ),
       );
   });
+  if (canAnalyze) void detectMissingMono().catch((error) => toast(error.message));
 }
 
 bindCommonControls();

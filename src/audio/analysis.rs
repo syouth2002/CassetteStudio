@@ -38,7 +38,9 @@ pub(super) fn detect_silence(
     Ok(silence_bounds(&log, decoded_duration))
 }
 pub fn measure_loudness(path: &Path, t: &Track) -> Result<Loudness, String> {
-    measure_loudness_with_dc(path, t, None)
+    let mut original = t.clone();
+    original.pseudo_stereo = 0;
+    measure_loudness_with_dc(path, &original, None)
 }
 fn measure_loudness_with_dc(
     path: &Path,
@@ -56,8 +58,9 @@ fn measure_loudness_with_dc(
         .transpose()?
         .map(|f| format!(",{f}"))
         .unwrap_or_default();
+    let stereo = super::stereo::filter(t)?;
     let filter = format!(
-        "{STEREO},atrim=start={}:end={},asetpts=PTS-STARTPTS{dc},loudnorm=I=-18:TP=-1:LRA=50:print_format=json",
+        "{STEREO}{dc}{stereo},atrim=start={}:end={},asetpts=PTS-STARTPTS,loudnorm=I=-18:TP=-1:LRA=50:print_format=json",
         t.trim_start, t.trim_end
     );
     let o = run(command("ffmpeg")
@@ -67,14 +70,33 @@ fn measure_loudness_with_dc(
     parse_loudness(&String::from_utf8_lossy(&o.stderr))
 }
 pub fn measure_track(path: &Path, t: &mut Track) -> Result<(), String> {
+    if t.mono.is_none() {
+        t.mono = Some(super::stereo::detect(path)?);
+    }
     if t.loudness.is_none() {
         t.loudness = Some(measure_loudness(path, t)?);
     }
     if t.dc.is_none() {
         let offset = measure_dc_range(path, t.trim_start, t.trim_end)?;
-        let corrected_loudness = measure_loudness_with_dc(path, t, Some(offset))?;
+        let mut original = t.clone();
+        original.pseudo_stereo = 0;
+        let corrected_loudness = measure_loudness_with_dc(path, &original, Some(offset))?;
         t.dc = Some(DcAnalysis {
             offset,
+            corrected_loudness,
+        });
+    }
+    if t.pseudo_stereo != 0
+        && t.pseudo_analysis
+            .as_ref()
+            .is_none_or(|a| a.strength != t.pseudo_stereo)
+    {
+        let loudness = measure_loudness_with_dc(path, t, None)?;
+        let corrected_loudness =
+            measure_loudness_with_dc(path, t, Some(t.dc.as_ref().unwrap().offset))?;
+        t.pseudo_analysis = Some(PseudoAnalysis {
+            strength: t.pseudo_stereo,
+            loudness,
             corrected_loudness,
         });
     }

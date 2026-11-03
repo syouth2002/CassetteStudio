@@ -997,3 +997,6 @@ label select {
   .lufs-controls { overflow: visible; border-right: 0; padding-right: 0; }
   #lufs-plot { height: 420px; }
 }
+
+#gain-dialog { max-height: calc(100vh - 50px); overflow-y: auto; }
+#gain-audio { width: 100%; margin: 12px 0; }

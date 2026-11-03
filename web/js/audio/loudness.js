@@ -1,9 +1,11 @@
 "use strict";
 // Loudness display calculation; actual audio correction is performed by Rust.
 function gainInfo(t, s = config()) {
-  const l = s.remove_dc ? t.dc?.corrected_loudness : t.loudness,
+  const l = t.pseudo_stereo
+      ? (s.remove_dc ? t.pseudo_analysis?.corrected_loudness : t.pseudo_analysis?.loudness)
+      : (s.remove_dc ? t.dc?.corrected_loudness : t.loudness),
     m = t.manual_gain_db || 0;
-  if (!s.normalize && !m && !s.remove_dc)
+  if (!s.normalize && !m && !s.remove_dc && !t.pseudo_stereo)
     return { text: csText("補正なし"), gain: 0, limited: false };
   if (!l) return { text: csText("音量未解析"), gain: 0, limited: false };
   const requested =

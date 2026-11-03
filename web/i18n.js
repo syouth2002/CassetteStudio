@@ -65,6 +65,7 @@ function csSetLanguage(language) {
     "record-start",
     "gain-measurement",
     "gain-dc-measurement",
+    "mono-status",
     "batch-source",
     "name-prompt",
     "confirm-message",

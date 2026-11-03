@@ -225,6 +225,62 @@ const assert = require('node:assert/strict');
     assert.equal(elements.get('workspace').inert,false);
     assert.equal(elements.get('remove-selected').disabled,false);
     context.api=deleteApi;context.askConfirm=deleteConfirm;
+    // The actual gain dialog permits pseudo stereo only after a mono result.
+    const savedApi=context.api;
+    const sourceTrack=structuredClone(vm.runInContext('lib.tracks[0]',context));
+    context.api=async()=>({tracks:[{...sourceTrack,mono:false,pseudo_stereo:0}],reports:{[sourceTrack.id]:{gain_db:0,limited:false}}});
+    vm.runInContext("active='all';selected=new Set([0]);",context);
+    await elements.get('adjust-volume').onclick();
+    assert.equal(elements.get('gain-dialog').open,true);
+    assert.equal(elements.get('pseudo-stereo').disabled,true);
+    assert.equal(elements.get('pseudo-stereo').value,'0');
+    elements.get('gain-dialog').close();
+    context.api=async()=>({tracks:[{...sourceTrack,mono:true,pseudo_stereo:0}],reports:{[sourceTrack.id]:{gain_db:0,limited:false}}});
+    await elements.get('adjust-volume').onclick();
+    assert.equal(elements.get('pseudo-stereo').disabled,false);
+    assert.equal(elements.get('pseudo-stereo').value,'0');
+    const requestCalls=[];
+    context.api=async(route,body,method)=>{
+      requestCalls.push({route,body,method});
+      assert.equal(elements.get('busy').hidden,false);
+      assert.equal(elements.get('busy').parentNode,elements.get('gain-dialog'));
+      const t={...sourceTrack,mono:true,pseudo_stereo:2,manual_gain_db:0,
+        pseudo_analysis:{strength:2,loudness:{integrated_lufs:-20,true_peak_db:-4},corrected_loudness:{integrated_lufs:-20,true_peak_db:-4}}};
+      if(route.startsWith('/api/preview/'))return {url:'/media/audition.wav',track:t};
+      return t;
+    };
+    elements.get('pseudo-stereo').value='2';
+    await elements.get('gain-form').onsubmit({preventDefault(){},submitter:{id:'gain-preview'}});
+    assert.equal(requestCalls[0].route,'/api/tracks/'+sourceTrack.id+'/pseudo-stereo');
+    assert.equal(requestCalls[0].body.strength,2);
+    assert.equal(elements.get('gain-audio').hidden,false);
+    assert.equal(elements.get('gain-audio').paused,false);
+    assert.equal(elements.get('gain-dialog').open,true);
+    elements.get('gain-dialog').close();
+    assert.equal(elements.get('gain-audio').paused,true);
+    assert.equal(elements.get('gain-audio').hidden,true);
+    // Saving keeps the progress message in the modal's top layer and releases it on close.
+    elements.get('gain-dialog').showModal();
+    await elements.get('gain-form').onsubmit({preventDefault(){},submitter:{id:'gain-save'}});
+    assert.equal(elements.get('gain-dialog').open,false);
+    assert.equal(elements.get('busy').hidden,true);
+    assert.notEqual(elements.get('busy').parentNode,elements.get('gain-dialog'));
+    // Legacy mono labels are populated in the background without opening gain UI.
+    vm.runInContext("lib.tracks[0].mono=null;draw();",context);
+    context.api=async(route,body)=>{
+      assert.equal(route,'/api/mono');
+      assert.deepEqual(Array.from(body.tracks),[sourceTrack.id]);
+      return {tracks:[{id:sourceTrack.id,mono:true}],errors:0};
+    };
+    await context.detectMissingMono();
+    assert.match(elements.get('tracks').innerHTML,/>MONO<|>モノラル</);
+    for(const [strength,label] of [[1,'疑似ステレオ：弱'],[2,'疑似ステレオ：中'],[3,'疑似ステレオ：強']]){
+      vm.runInContext('lib.tracks[0].pseudo_stereo='+strength+';draw();',context);
+      assert.ok(elements.get('tracks').innerHTML.includes(context.csText(label)));
+    }
+    vm.runInContext("lib.tracks[0].mono=false;lib.tracks[0].pseudo_stereo=0;draw();",context);
+    assert.doesNotMatch(elements.get('tracks').innerHTML,/>MONO<|>モノラル</);
+    context.api=savedApi;
     console.log(`PASS: ${scripts.length} embedded scripts, startup, button bindings, modal notifications, tone lifecycle, auto fit, language, recording immediate/delayed/cancel`);
   } finally { server.kill(); }
 })().catch(error=>{console.error(error);process.exitCode=1;});

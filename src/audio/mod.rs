@@ -4,6 +4,7 @@ mod import;
 mod metadata;
 mod processing;
 mod render;
+mod stereo;
 mod tools;
 
 pub use analysis::measure_track;
@@ -11,6 +12,7 @@ pub use import::{analyze, import_url};
 pub use metadata::repair_legacy_tag;
 pub use processing::{gain, preview_name};
 pub use render::{preview, render};
+pub use stereo::detect as detect_mono;
 pub use tools::available;
 
 // Measurements and playback must use the same stereo conversion.

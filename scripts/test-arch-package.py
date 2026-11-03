@@ -23,7 +23,7 @@ with tempfile.TemporaryDirectory(prefix='cassette-arch-') as folder:
                     time.sleep(.2)
                 assert base,(root/'server.log').read_text()
                 status=json.load(urllib.request.urlopen(base+'/api/status'))
-                assert status['version']=='0.1.7' and status['ffmpeg'] and status['ffprobe'],status
+                assert status['version']=='0.1.8' and status['ffmpeg'] and status['ffprobe'],status
                 assert b'options-dialog' in urllib.request.urlopen(base).read()
                 assert b'referenceToneWav' in urllib.request.urlopen(base+'/reference-tone.js').read()
                 boundary='cassette-arch-fixture'

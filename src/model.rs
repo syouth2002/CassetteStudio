@@ -15,10 +15,24 @@ pub struct Track {
     pub trim_end: f64,
     #[serde(default)]
     pub manual_gain_db: f64,
+    /// None: not yet checked; true only for one-channel or effectively identical L/R.
+    #[serde(default)]
+    pub mono: Option<bool>,
+    /// 0=off, 1=weak, 2=standard, 3=strong. Shared by all uses of this source.
+    #[serde(default)]
+    pub pseudo_stereo: u8,
+    #[serde(default)]
+    pub pseudo_analysis: Option<PseudoAnalysis>,
     #[serde(default)]
     pub loudness: Option<Loudness>,
     #[serde(default)]
     pub dc: Option<DcAnalysis>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PseudoAnalysis {
+    pub strength: u8,
+    pub loudness: Loudness,
+    pub corrected_loudness: Loudness,
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Loudness {
@@ -157,6 +171,7 @@ impl Library {
         if old.trim_start != original.trim_start
             || old.trim_end != original.trim_end
             || old.duration != original.duration
+            || old.pseudo_stereo != original.pseudo_stereo
         {
             return Err("曲の解析範囲が変更されました。再実行してください".into());
         }

@@ -268,6 +268,9 @@ mod tests {
             trim_start: 4.0,
             trim_end: len + 4.0,
             manual_gain_db: 0.0,
+            mono: None,
+            pseudo_stereo: 0,
+            pseudo_analysis: None,
             loudness: None,
             dc: None,
         }

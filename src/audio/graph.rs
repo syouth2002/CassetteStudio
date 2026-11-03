@@ -231,6 +231,7 @@ pub fn side_graph(
         let mut originals = used.clone();
         for t in &mut originals {
             t.manual_gain_db = 0.0;
+            t.pseudo_stereo = 0;
         }
         super::render::render(root, &originals, entries, &raw, &temp)?;
         let original = measure(&temp, "anull")?;

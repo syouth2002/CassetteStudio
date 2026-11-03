@@ -1,8 +1,14 @@
 "use strict";
 // Notifications, busy-state UI and reusable name/confirmation dialogs.
-function placeToast() {
+function placeNotification(id) {
   const dialogs = [...document.querySelectorAll("dialog[open]")];
-  (dialogs.at(-1) || document.body).appendChild($("toast"));
+  (dialogs.at(-1) || document.body).appendChild($(id));
+}
+function placeToast() {
+  placeNotification("toast");
+}
+function placeBusy() {
+  placeNotification("busy");
 }
 function toast(msg) {
   clearTimeout(toastTimer);
@@ -13,6 +19,7 @@ function toast(msg) {
 }
 async function task(message, fn) {
   busy++;
+  placeBusy();
   $("busy-label").textContent = message;
   $("busy").hidden = false;
   document

@@ -19,7 +19,11 @@ pub(super) fn processing_filter(t: &Track, s: &Settings) -> Result<String, Strin
     } else {
         String::new()
     };
-    Ok(format!("{STEREO}{dc},volume={}dB", gain(t, s)?.gain_db))
+    let stereo = super::stereo::filter(t)?;
+    Ok(format!(
+        "{STEREO}{dc}{stereo},volume={}dB",
+        gain(t, s)?.gain_db
+    ))
 }
 #[derive(Debug, serde::Serialize)]
 pub struct GainReport {
@@ -32,14 +36,26 @@ pub fn gain(t: &Track, s: &Settings) -> Result<GainReport, String> {
     if !t.manual_gain_db.is_finite() || !(-24.0..=24.0).contains(&t.manual_gain_db) {
         return Err("手動補正は−24〜＋24 dBで指定してください".into());
     }
-    if !s.normalize && t.manual_gain_db == 0.0 && !s.remove_dc {
+    if !s.normalize && t.manual_gain_db == 0.0 && !s.remove_dc && t.pseudo_stereo == 0 {
         return Ok(GainReport {
             gain_db: 0.0,
             limited: false,
             predicted_lufs: t.loudness.as_ref().and_then(|l| l.integrated_lufs),
         });
     }
-    let stats = if s.remove_dc {
+    let stats = if t.pseudo_stereo != 0 {
+        super::stereo::filter(t)?;
+        let a = t
+            .pseudo_analysis
+            .as_ref()
+            .filter(|a| a.strength == t.pseudo_stereo)
+            .ok_or("疑似ステレオの音量解析が必要です")?;
+        if s.remove_dc {
+            &a.corrected_loudness
+        } else {
+            &a.loudness
+        }
+    } else if s.remove_dc {
         &t.dc
             .as_ref()
             .ok_or("DCオフセット解析が必要です")?
@@ -75,6 +91,10 @@ pub fn preview_name(t: &Track, s: &Settings) -> String {
         t.trim_start.to_bits(),
         t.trim_end.to_bits(),
     )
+        .hash(&mut hash);
+    t.pseudo_stereo.hash(&mut hash);
+    serde_json::to_string(&t.pseudo_analysis)
+        .unwrap_or_default()
         .hash(&mut hash);
     s.remove_dc.hash(&mut hash);
     if s.remove_dc {

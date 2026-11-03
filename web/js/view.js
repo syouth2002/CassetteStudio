@@ -131,12 +131,21 @@ function draw() {
         badges.push(csText('<span class="badge warning">全体が無音</span>'));
       else if (t.duration - duration(t) > 0.05)
         badges.push(csText('<span class="badge">無音除去</span>'));
+      if (t.mono === true)
+        badges.push('<span class="badge">' + csText("モノラル") + '</span>');
+      const stereoLabel = {
+        1: "疑似ステレオ：弱",
+        2: "疑似ステレオ：中",
+        3: "疑似ステレオ：強",
+      }[t.pseudo_stereo];
+      if (stereoLabel)
+        badges.push('<span class="badge">' + csText(stereoLabel) + '</span>');
       const correction = gainInfo(t);
       if (config().remove_dc)
         badges.push(
           `<span class="badge" title="${esc(t.dc ? csText("DCオフセット：L {0}% / R {1}%", (t.dc.offset[0] * 100).toFixed(4), (t.dc.offset[1] * 100).toFixed(4)) : csText("未解析"))}">${csText(t.dc ? "DC除去" : "DC未解析")}</span>`,
         );
-      if (config().normalize || config().remove_dc || t.manual_gain_db)
+      if (config().normalize || config().remove_dc || t.manual_gain_db || t.pseudo_stereo)
         badges.push(
           `<span class="badge ${correction.limited ? "warning" : "gain-badge"}" title="${esc(t.loudness?.integrated_lufs != null ? csText("元の音量 {0} LUFS", t.loudness.integrated_lufs.toFixed(1)) : csText("未解析"))}">${esc(correction.text)}</span>`,
         );

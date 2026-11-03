@@ -16,8 +16,10 @@ function bindCommonControls() {
   document.addEventListener(
     "close",
     (e) => {
-      if (e.target.tagName === "DIALOG" && e.target.contains($("toast")))
-        placeToast();
+      if (e.target.tagName === "DIALOG") {
+        if (e.target.contains($("toast"))) placeToast();
+        if (e.target.contains($("busy"))) placeBusy();
+      }
     },
     true,
   );

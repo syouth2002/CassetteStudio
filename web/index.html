@@ -738,6 +738,17 @@
         <p id="gain-title"></p>
         <p id="gain-measurement" class="hint"></p>
         <p id="gain-dc-measurement" class="hint"></p>
+        <label><span data-i18n="疑似ステレオ化">疑似ステレオ化</span>
+          <select id="pseudo-stereo" disabled>
+            <option value="0" data-i18n="OFF">OFF</option>
+            <option value="1" data-i18n="弱">弱</option>
+            <option value="2" data-i18n="標準">標準</option>
+            <option value="3" data-i18n="強">強</option>
+          </select>
+        </label>
+        <p id="mono-status" class="hint"></p>
+        <p class="hint" data-i18n="モノラルと判定された曲だけ選択できます。設定は全カセットで共通です。元ファイルは変更しません。">モノラルと判定された曲だけ選択できます。設定は全カセットで共通です。元ファイルは変更しません。</p>
+        <audio id="gain-audio" controls hidden></audio>
         <label
           ><span data-i18n="手動補正（dB）">手動補正（dB）</span
           ><input
@@ -756,6 +767,7 @@
           >
         </p>
         <div class="dialog-actions">
+          <button id="gain-preview" type="submit" data-i18n="保存して試聴">保存して試聴</button>
           <button class="primary" type="submit">
             <span data-i18n="保存">保存</span>
           </button>
@@ -837,7 +849,7 @@
         </button>
       </div>
     </dialog>
-    <div id="busy" hidden>
+    <div id="busy" role="status" aria-live="polite" aria-atomic="true" hidden>
       <div class="spinner"></div>
       <span id="busy-label"></span>
     </div>

@@ -13,6 +13,9 @@ fn test_track() -> Track {
         trim_start: 0.0,
         trim_end: 10.0,
         manual_gain_db: 0.0,
+        mono: None,
+        pseudo_stereo: 0,
+        pseudo_analysis: None,
         dc: None,
         loudness: Some(Loudness {
             integrated_lufs: Some(-24.0),

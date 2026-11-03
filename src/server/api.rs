@@ -28,12 +28,14 @@ pub(super) fn routes(root: &std::path::Path) -> Router<App> {
         .route("/api/preview/{id}", post(preview))
         .route("/api/reanalyze", put(reanalyze))
         .route("/api/loudness", post(loudness))
+        .route("/api/mono", post(detect_mono))
         .route("/api/tracks/{id}/loudness-graph", post(loudness_graph))
         .route(
             "/api/collections/{id}/loudness-graph",
             post(side_loudness_graph),
         )
         .route("/api/tracks/{id}/gain", put(manual_gain))
+        .route("/api/tracks/{id}/pseudo-stereo", put(pseudo_stereo))
         .route("/api/tracks", delete(remove_tracks))
         .nest_service("/media", ServeDir::new(root.join("preview")))
         .nest_service("/exports", ServeDir::new(root.join("exports")))
@@ -41,6 +43,65 @@ pub(super) fn routes(root: &std::path::Path) -> Router<App> {
 
 async fn library(State(app): State<App>) -> Api<Library> {
     Ok(Json(app.snapshot()?))
+}
+#[derive(Deserialize)]
+struct MonoRequest {
+    tracks: Vec<String>,
+}
+async fn detect_mono(
+    State(app): State<App>,
+    Json(body): Json<MonoRequest>,
+) -> Api<serde_json::Value> {
+    if body.tracks.len() > 128 {
+        return Err(Error("一度に判定できる曲は128曲までです".into()));
+    }
+    let snapshot = app.snapshot()?;
+    let ids: std::collections::HashSet<_> = body.tracks.into_iter().collect();
+    let missing = snapshot
+        .tracks
+        .iter()
+        .filter(|t| ids.contains(&t.id) && t.mono.is_none())
+        .map(|t| t.id.clone())
+        .collect::<Vec<_>>();
+    let root = app.root.clone();
+    let measured = app
+        .work(move || {
+            Ok(missing
+                .into_iter()
+                .map(|id| {
+                    let result = audio::detect_mono(&root.join("sources").join(&id));
+                    (id, result)
+                })
+                .collect::<Vec<_>>())
+        })
+        .await?;
+    let errors = measured
+        .iter()
+        .filter(|(_, result)| result.is_err())
+        .count();
+    if measured.iter().any(|(_, result)| result.is_ok()) {
+        app.update(|lib| {
+            for (id, result) in measured {
+                if let Ok(mono) = result
+                    && let Some(track) = lib.tracks.iter_mut().find(|t| t.id == id)
+                    && track.mono.is_none()
+                {
+                    track.mono = Some(mono);
+                }
+            }
+            Ok(())
+        })?;
+    }
+    let tracks = app
+        .snapshot()?
+        .tracks
+        .into_iter()
+        .filter(|t| ids.contains(&t.id))
+        .map(|t| serde_json::json!({"id": t.id, "mono": t.mono}))
+        .collect::<Vec<_>>();
+    Ok(Json(
+        serde_json::json!({"tracks": tracks, "errors": errors}),
+    ))
 }
 async fn status(State(app): State<App>) -> Api<serde_json::Value> {
     let data=app.work(||{
@@ -293,7 +354,7 @@ async fn render(State(app): State<App>, Json(body): Json<RenderRequest>) -> Api<
         || lib
             .tracks
             .iter()
-            .any(|t| ids.contains(&t.id) && t.manual_gain_db != 0.0)
+            .any(|t| ids.contains(&t.id) && (t.manual_gain_db != 0.0 || t.pseudo_stereo != 0))
     {
         app.ensure_loudness(&ids).await?;
         lib = app.snapshot()?;
@@ -333,7 +394,7 @@ async fn preview(
             .snapshot()?
             .tracks
             .iter()
-            .any(|t| t.id == id && t.manual_gain_db != 0.0)
+            .any(|t| t.id == id && (t.manual_gain_db != 0.0 || t.pseudo_stereo != 0))
     {
         app.ensure_loudness(std::slice::from_ref(&id)).await?;
     }
@@ -393,6 +454,58 @@ async fn manual_gain(
     Ok(Json(track))
 }
 #[derive(Deserialize)]
+struct PseudoStereoRequest {
+    strength: u8,
+}
+async fn pseudo_stereo(
+    State(app): State<App>,
+    Path(id): Path<String>,
+    Json(body): Json<PseudoStereoRequest>,
+) -> Api<Track> {
+    if body.strength > 3 {
+        return Err(Error("疑似ステレオの設定が不正です".into()));
+    }
+    let original = app
+        .ensure_loudness(std::slice::from_ref(&id))
+        .await?
+        .into_iter()
+        .next()
+        .ok_or(Error("曲が見つかりません".into()))?;
+    if body.strength != 0 && original.mono != Some(true) {
+        return Err(Error("疑似ステレオ化はモノラルの曲だけ選択できます".into()));
+    }
+    let mut measured = original.clone();
+    measured.pseudo_stereo = body.strength;
+    measured.pseudo_analysis = None;
+    if body.strength != 0 {
+        let path = app.root.join("sources").join(&id);
+        measured = app
+            .work(move || {
+                audio::measure_track(&path, &mut measured)?;
+                Ok(measured)
+            })
+            .await?;
+    }
+    let track = app.update(|lib| {
+        let current = lib
+            .tracks
+            .iter_mut()
+            .find(|t| t.id == id)
+            .ok_or("曲が見つかりません")?;
+        if current.trim_start != original.trim_start
+            || current.trim_end != original.trim_end
+            || current.pseudo_stereo != original.pseudo_stereo
+            || current.mono != original.mono
+        {
+            return Err("曲の設定が変更されました。再実行してください".into());
+        }
+        current.pseudo_stereo = measured.pseudo_stereo;
+        current.pseudo_analysis = measured.pseudo_analysis;
+        Ok(current.clone())
+    })?;
+    Ok(Json(track))
+}
+#[derive(Deserialize)]
 struct ReanalyzeRequest {
     tracks: Vec<String>,
     settings: Settings,
@@ -426,13 +539,17 @@ async fn reanalyze(State(app): State<App>, Json(body): Json<ReanalyzeRequest>) -
             originals
                 .into_iter()
                 .map(|old| {
-                    let analyzed = audio::analyze(
+                    let mut analyzed = audio::analyze(
                         &root.join("sources").join(&old.id),
                         old.id.clone(),
                         old.filename.clone(),
                         old.source.clone(),
                         &body.settings,
                     )?;
+                    if analyzed.mono == Some(true) {
+                        analyzed.pseudo_stereo = old.pseudo_stereo;
+                        audio::measure_track(&root.join("sources").join(&old.id), &mut analyzed)?;
+                    }
                     Ok((old, analyzed))
                 })
                 .collect::<Result<Vec<_>, String>>()
