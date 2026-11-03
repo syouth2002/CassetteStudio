@@ -7,7 +7,7 @@
 同じ.flatpakを、Flatpakが利用できるディストリビューションで使用します。GTK・WebKitGTKは共通のGNOME 49ランタイムを使用します。OS側のFFmpegを変更せず、アプリ内のFFmpeg・FFprobe・yt-dlp・Node.jsを使います。
 
     flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-    flatpak install --user ./CassetteStudio-0.1.8-x86_64.flatpak
+    flatpak install --user ./CassetteStudio-0.1.9-x86_64.flatpak
     flatpak run io.github.syouth2002.CassetteStudio//local
 
 初回はランタイム取得にネット接続と追加容量が必要です。アプリ一覧では「Cassette Studio (Flatpak)」です。Flathub登録済みアプリではなく、手元で作成したバンドルのインストールです。
@@ -16,14 +16,14 @@
 
 ## AppImage
 
-    chmod +x CassetteStudio-0.1.8-x86_64.AppImage
-    ./CassetteStudio-0.1.8-x86_64.AppImage
+    chmod +x CassetteStudio-0.1.9-x86_64.AppImage
+    ./CassetteStudio-0.1.9-x86_64.AppImage
 
 GTK・WebKitGTK、補助プロセス、WAV再生用プラグイン、音声／URLツールを含めます。基礎ライブラリやグラフィックドライバーまでOSから独立する形式ではありません。現在のビルドはUbuntu 24.04を基準とし、glibc 2.39以降が必要です。古いディストリビューションへの対応は保証しません。共通実行環境を優先する場合はFlatpakを選んでください。
 
 FUSEが使えない環境では展開実行できます。
 
-    APPIMAGE_EXTRACT_AND_RUN=1 ./CassetteStudio-0.1.8-x86_64.AppImage
+    APPIMAGE_EXTRACT_AND_RUN=1 ./CassetteStudio-0.1.9-x86_64.AppImage
 
 ## 既存版との併用
 
@@ -49,7 +49,7 @@ Ubuntu 24.04 x86_64でRustの通常Linux版を先に生成し、dist/linux-x64�
 
 テスト用Flatpakをユーザー領域へインストール後、D-Bus／仮想画面内で次を実行します。合成音源だけを使い、個人のライブラリは使用しません。
 
-    sh scripts/test-linux-bundles.sh --appimage ./dist/linux-bundles/CassetteStudio-0.1.8-x86_64.AppImage
+    sh scripts/test-linux-bundles.sh --appimage ./dist/linux-bundles/CassetteStudio-0.1.9-x86_64.AppImage
 
 取り込み、DC/LUFS、A/B面、48kHz WAV、J-CARD保存、3形式の同時起動・保存先分離を検証します。現在の検証環境はUbuntu 24.04／WSL2です。他ディストリビューションの実機、Wayland、物理音声機器、D&D・保存ポータルの組み合わせは別途確認が必要です。「全Linux環境で動く」という保証ではありません。
 

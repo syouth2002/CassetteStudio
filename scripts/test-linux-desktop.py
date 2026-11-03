@@ -11,7 +11,7 @@ for attempt in range(100):
     except (OSError,urllib.error.URLError):time.sleep(.2)
 else:raise RuntimeError((test_dir/'window.log').read_text())
 time.sleep(3)
-assert status['version']=='0.1.8' and status['ffmpeg'] and status['ffprobe'],status
+assert status['version']=='0.1.9' and status['ffmpeg'] and status['ffprobe'],status
 assert 'Cassette' in get('/').read().decode()
 catalog=json.load(get('/en.json'));assert catalog['すべての曲']=='All tracks'
 source=test_dir/'quiet.wav'

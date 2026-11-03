@@ -138,7 +138,11 @@ console.log(
 );
 const base2 = M.create(c, tracks);
 assert.equal(base2.version, 2);
-assert(base2.backElements.length);
+assert.equal(base2.backElements.length, 0);
+assert.equal(base2.backBackground, "#ffffff");
+M.refresh(base2, c, tracks);
+assert.equal(base2.backElements.length, 0);
+base2.backElements.push(M.text("back-a", 4, 8, 27, 86, "User-added inside text", 8, "sideA"));
 for (const paper of ["a4", "letter"]) {
   const tape = { ...M.clone(base2), paper };
   const plus2 = M.withExtensions(tape, [65, 65]);
@@ -209,6 +213,10 @@ console.log(
   "PASS: legacy migration, independent faces, mirrored folds, A4/Letter real-size +2 limit, narrower extra panels, cutting/folding marks, two-page PDF offsets and paper sizes",
 );
 const legacyLists = M.create(c, tracks);
+legacyLists.backElements.push(
+  M.text("back-a", 4, 8, 27, 86, "Legacy A", 8, "sideA"),
+  M.text("back-b", 35, 8, 27, 86, "Legacy B", 8, "sideB"),
+);
 for (const item of [...legacyLists.elements, ...legacyLists.backElements])
   if (["sideA", "sideB"].includes(item.binding)) item.binding = "";
 const updatedMix = { ...c, sides: [[{ track_id: "t", duration: 32 }], []] };

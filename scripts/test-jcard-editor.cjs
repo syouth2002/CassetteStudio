@@ -150,7 +150,11 @@ const runTimers = () => {
   assert(stored && stored.version === 2);
   assert.equal(node("save-state").textContent, "保存済み");
   const front = copy(stored.elements);
+  assert.equal(stored.backElements.length, 0);
+  assert.equal(stored.backBackground, "#ffffff");
   await change("face", "back");
+  await click("text-add");
+  await change("binding", "sideA");
   await change("text", "Inside edited");
   await change("background", "#112233");
   runTimers();

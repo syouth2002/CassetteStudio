@@ -301,8 +301,14 @@ struct PlanRequest {
 async fn make_plan(State(app): State<App>, Json(body): Json<PlanRequest>) -> Api<[Vec<Entry>; 2]> {
     let lib = app.snapshot()?;
     Ok(Json(
-        app.work(move || planner::plan(&lib.tracks, &body.tracks, &body.settings, body.optimize))
-            .await?,
+        app.work(move || {
+            if body.optimize {
+                planner::plan_unused(&lib, &body.tracks, &body.settings)
+            } else {
+                planner::plan(&lib.tracks, &body.tracks, &body.settings, false)
+            }
+        })
+        .await?,
     ))
 }
 #[derive(Deserialize)]

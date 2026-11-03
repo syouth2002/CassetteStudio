@@ -67,7 +67,7 @@ window.JCardModel = (() => {
       d.paper = "a4";
       d.margin = 5;
       d.backElements = [];
-      d.backBackground = "#fffdf7";
+      d.backBackground = "#ffffff";
       if (!layout(d)) d.margin = 0;
     }
     return validate(d);
@@ -122,11 +122,8 @@ window.JCardModel = (() => {
         extensions: [],
         paper: "a4",
         margin: 5,
-        backBackground: "#fffdf7",
-        backElements: [
-          text("back-a", 4, 8, 27, 86, v.sideA, 8, "sideA"),
-          text("back-b", 35, 8, 27, 86, v.sideB, 8, "sideB"),
-        ],
+        backBackground: "#ffffff",
+        backElements: [],
         front: 65,
         spine: 12,
         flap: 25,

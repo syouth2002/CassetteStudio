@@ -130,6 +130,38 @@ pub fn plan(
     Ok(sides)
 }
 
+/// Automatic creation of a new tape reserves recordings already on any cassette.
+/// Candidate metadata in Collection.tracks is not a recording: only A/B entries count.
+pub fn plan_unused(
+    lib: &Library,
+    ids: &[String],
+    settings: &Settings,
+) -> Result<[Vec<Entry>; 2], String> {
+    use std::collections::HashSet;
+    let used: HashSet<&str> = lib
+        .collections
+        .iter()
+        .filter(|c| c.kind == "cassette")
+        .flat_map(|c| c.sides.iter().flatten().map(|e| e.track_id.as_str()))
+        .collect();
+    let mut seen = HashSet::new();
+    let mut available = Vec::new();
+    for id in ids {
+        let track = lib
+            .tracks
+            .iter()
+            .find(|t| &t.id == id)
+            .ok_or("曲が見つかりません")?;
+        if !used.contains(id.as_str()) && seen.insert(id.clone()) && track.audible() > 0.0 {
+            available.push(id.clone());
+        }
+    }
+    if available.is_empty() {
+        return Err("未収録の曲がありません。収録済みの曲と無音の曲は除外します".into());
+    }
+    plan(&lib.tracks, &available, settings, true)
+}
+
 #[derive(Debug, serde::Serialize)]
 pub struct BatchPlan {
     pub collections: Vec<Collection>,

@@ -17,7 +17,7 @@ Checks: `node scripts/test-jcard.cjs` (model, bindings, SVG and PDF structure), 
 
 ## Two sides and fold-out panels
 
-Switch between Outside and Inside. Inside artwork remains readable, with mirrored fold positions rather than mirrored text. New cards include inside track lists. Version 1 artwork migrates without changing outside elements and gains an empty inside.
+Switch between Outside and Inside. Inside artwork remains readable, with mirrored fold positions rather than mirrored text. New cards place track lists on the outside only and start with a blank white inside. Refreshing track lists does not add content to an empty inside. You can add and link text manually; existing saved artwork is preserved. Version 1 artwork migrates without changing outside elements and gains an empty inside.
 
 Add fold-out panels to the right of the front. Panel widths range from 10 to 100 mm. The entire card must fit on one sheet at actual size, including 5 mm for guide marks on every edge and the selected paper margin. Dimension and paper changes use the same check; artwork is never automatically reduced. Default dimensions (front 65, spine 12, flap 25, height 100 mm, margin 5 mm) allow at most two additional 65 mm panels on either A4 or Letter. The unfolded widths are 102 / 167 / 232 mm for +0 / +1 / +2. Narrower panels may allow more, so the limit is geometric rather than a fixed +2. Separate-sheet booklets are not supported.
 
@@ -39,4 +39,4 @@ These object operations use an in-app J-CARD clipboard. Native text cut/copy/pas
 
 ![Outside artwork editor](screenshots/jcard-outside-en.jpg)
 
-![Inside artwork and additional panels](screenshots/jcard-inside-en.jpg)
+![Blank inside of a new J-CARD](screenshots/jcard-inside-en.jpg)

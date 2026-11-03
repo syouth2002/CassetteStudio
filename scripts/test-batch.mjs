@@ -18,6 +18,13 @@ const post=(body)=>fetch(base+'/api/fill-cassettes',{method:'POST',headers:{'con
 try{
  for(let i=0;i<80;i++){try{await fetch(base+'/api/library');break;}catch{await new Promise(r=>setTimeout(r,100));if(i===79)throw Error('Startup timeout');}}
  const initial=await(await fetch(base+'/api/library')).json();
+ const plan=optimize=>fetch(base+'/api/plan',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({tracks:tracks.map(t=>t.id),settings,optimize})});
+ const automatic=await plan(true);assert.equal(automatic.status,200);
+ const autoSides=await automatic.json();assert.ok(autoSides.flat().length);assert.ok(autoSides.flat().every(e=>e.track_id!==tracks[0].id));
+ const manual=await plan(false);assert.equal(manual.status,200);assert.ok((await manual.json()).flat().some(e=>e.track_id===tracks[0].id));
+ const unavailable=await fetch(base+'/api/plan',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({tracks:[tracks[0].id],settings,optimize:true})});
+ assert.equal(unavailable.status,400);assert.deepEqual(await(await fetch(base+'/api/library')).json(),initial);
+
  const response=await post({tracks:[...tracks.map(t=>t.id),tracks[1].id],targets:[short.id,long.id]});assert.equal(response.status,200);const result=await response.json();
  assert.equal(result.collections.length,2);assert.equal(result.excluded,1);
  const seen=new Set();for(const c of result.collections){assert.ok([50,100].includes(c.settings.side_seconds));for(const id of c.tracks){assert.notEqual(id,tracks[0].id);assert.ok(!seen.has(id));seen.add(id);}for(const es of c.sides){assert.ok(es.reduce((n,e)=>n+e.duration,0)<=c.settings.side_seconds+.001);}}

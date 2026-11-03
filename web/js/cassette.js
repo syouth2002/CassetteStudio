@@ -18,6 +18,11 @@ function fitTapeEntry(entry, sourceSeconds, occupied, s) {
   };
 }
 async function makeTape(optimize) {
+  const recorded = new Set(
+    lib.collections
+      .filter((c) => c.kind === "cassette")
+      .flatMap((c) => c.sides.flat().map((e) => e.track_id)),
+  );
   const blanks = lib.collections.filter(
     (c) => c.kind === "cassette" && c.sides.every((es) => es.length === 0),
   );
@@ -29,12 +34,12 @@ async function makeTape(optimize) {
           ? [...selected].sort((a, b) => a - b).map((i) => source[i])
           : source
         )
-          .filter((e) => e.duration > 0)
+          .filter((e) => e.duration > 0 && (!optimize || !recorded.has(e.track_id)))
           .map((e) => e.track_id),
       ),
     ];
     if (!batchTracks.length) {
-      toast(csText("収録する音源をライブラリに追加してください"));
+      toast(csText("未収録の曲がありません。収録済みの曲と無音の曲は除外します"));
       return;
     }
     $("batch-source").textContent = csText(
@@ -62,10 +67,12 @@ async function makeTape(optimize) {
         ? [...selected].sort((a, b) => a - b).map((i) => list[i])
         : list
     )
-      .filter((e) => e.duration > 0)
+      .filter((e) => e.duration > 0 && (!optimize || !recorded.has(e.track_id)))
       .map((e) => e.track_id);
   if (!ids.length) {
-    toast(csText("音楽・動画ファイルを追加し、収録する曲を選択してください"));
+    toast(csText(optimize
+      ? "未収録の曲がありません。収録済みの曲と無音の曲は除外します"
+      : "音楽・動画ファイルを追加し、収録する曲を選択してください"));
     return;
   }
   const s = structuredClone(config()),
@@ -75,6 +82,7 @@ async function makeTape(optimize) {
     );
   if (!name?.trim()) return;
   await task(csText("曲の長さを計算してA・B面へ配置しています…"), async () => {
+    await saveChain;
     const sides = await api("/api/plan", {
       tracks: ids,
       settings: s,
@@ -84,7 +92,7 @@ async function makeTape(optimize) {
       id: "",
       name: name.trim(),
       kind: "cassette",
-      tracks: ids,
+      tracks: optimize ? [...new Set(sides.flat().map((e) => e.track_id))] : ids,
       sides,
       settings: s,
     });
