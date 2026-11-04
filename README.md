@@ -6,7 +6,7 @@
 
 Arrange cassette mixtapes, prepare deck playback, export WAV audio and design J-CARDs. Windows, Linux and macOS use a standalone desktop window. The interface supports Japanese and English.
 
-**Version 0.1.9** — [Download](https://github.com/syouth2002/CassetteStudio/releases/latest) · [Release changes](docs/release-notes-0.1.9.md)
+**Version 0.1.10** — [Download](https://github.com/syouth2002/CassetteStudio/releases/latest) · [Release changes](docs/release-notes-0.1.10.md)
 
 ## Where to start
 

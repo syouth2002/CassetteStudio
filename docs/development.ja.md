@@ -38,14 +38,14 @@ Xcode Command Line Tools、Rust stable、FFmpegを用意します。
 
 ```sh
 cargo run --release --features desktop --bin cassette-studio-desktop --locked
-sh scripts/package-public-macos.sh 0.1.9
+sh scripts/package-public-macos.sh 0.1.10
 ```
 
 現在のCPU用に作成します。Apple SiliconとIntelは別々のMacランナーでビルドします。
 
 ## Arch Linux
 
-同じリリースの`PKGBUILD`と`CassetteStudio-0.1.9-Arch-source.tar.gz`を空フォルダーへ置き、内容を確認して通常ユーザーで実行します。
+同じリリースの`PKGBUILD`と`CassetteStudio-0.1.10-Arch-source.tar.gz`を空フォルダーへ置き、内容を確認して通常ユーザーで実行します。
 
 ```sh
 sudo pacman -S --needed base-devel rust pkgconf python
@@ -58,12 +58,12 @@ PKGBUILD内のSHA-256でソースを検証します。テンプレートは`pack
 
 | 環境 | 作成手順 |
 | --- | --- |
-| Windows | `scripts/package-public-windows.ps1 -Version 0.1.9` |
+| Windows | `scripts/package-public-windows.ps1 -Version 0.1.10` |
 | Linux全形式 | ネイティブ版をビルド後、`sh scripts/package-all-linux.sh` |
-| macOS | 各CPUのMacで`sh scripts/package-public-macos.sh 0.1.9` |
+| macOS | 各CPUのMacで`sh scripts/package-public-macos.sh 0.1.10` |
 | Arch | 上記makepkg、または`.github/workflows/arch.yml` |
 
-出力先は`dist/releases/v0.1.9`です。Python 3と、Rustツールチェーン付属の著作権表示がライセンス収集に必要です。
+出力先は`dist/releases/v0.1.10`です。Python 3と、Rustツールチェーン付属の著作権表示がライセンス収集に必要です。
 
 `package-windows.ps1`・`package-linux.sh`は外部ツールを同梱する手元用の補助スクリプトです。公開用のWindows・従来Linuxパッケージとは内容が違うため、公開版の導入手順と混同しないでください。[再配布条件](../THIRD_PARTY_NOTICES.md)も確認してください。
 
@@ -127,7 +127,7 @@ node scripts/test-entry-fit.cjs
 
 テストは`work`配下の合成音源と独立ライブラリを使い、通常のライブラリには入りません。
 
-Flatpakをテスト用ユーザー領域へ導入後、`sh scripts/test-linux-bundles.sh --appimage ./dist/linux-bundles/CassetteStudio-0.1.9-x86_64.AppImage`で同時起動・保存先分離・音声処理を検証します。`scripts/test-macos-package.py`・`scripts/test-arch-package.py`は各環境で配布実行ファイルを検証します。[物理機器などの確認範囲](installation.ja.md#coverage)も参照してください。
+Flatpakをテスト用ユーザー領域へ導入後、`sh scripts/test-linux-bundles.sh --appimage ./dist/linux-bundles/CassetteStudio-0.1.10-x86_64.AppImage`で同時起動・保存先分離・音声処理を検証します。`scripts/test-macos-package.py`・`scripts/test-arch-package.py`は各環境で配布実行ファイルを検証します。[物理機器などの確認範囲](installation.ja.md#coverage)も参照してください。
 
 ## ソース構成と調査資料
 

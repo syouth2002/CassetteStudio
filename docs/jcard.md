@@ -58,6 +58,8 @@ Ctrl/Cmd+X, C and V are supported. These use an in-app J-CARD clipboard. Cutting
 
 The left pane controls dimensions, A4/Letter and margins. Changing dimensions does not scale existing artwork.
 
+Choose Standard (12 mm) or Custom for the spine width. For slim cases, enter the measured width using Custom. Existing J-CARD spine widths are preserved.
+
 Fold-out panels are added to the right of the front. Widths range from 10 to 100 mm. The card must fit **one sheet at actual size**, including 5 mm of guide space on each edge and the chosen paper margin.
 
 Default dimensions with 5 mm margins allow two extra 65 mm panels on A4 or Letter. Unfolded widths are 102/167/232 mm for +0/+1/+2. Narrower panels may permit more; the limit is geometric. Separate-sheet booklets are unsupported.

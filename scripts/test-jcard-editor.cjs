@@ -61,6 +61,7 @@ class Element {
   insertAdjacentHTML(_, html) {
     if (this.id === "jc-properties") this.innerHTML = this.innerHTML + html;
   }
+  focus() {}
   showModal() {
     this.open = true;
   }
@@ -149,6 +150,23 @@ const runTimers = () => {
   await tick();
   assert(stored && stored.version === 2);
   assert.equal(node("save-state").textContent, "保存済み");
+  assert.equal(node("spine-mode").value, "standard");
+  assert.equal(node("spine").disabled, true);
+  await change("spine-mode", "custom");
+  assert.equal(node("spine").disabled, false);
+  await change("spine", "8.5");
+  runTimers();
+  await tick();
+  assert.equal(stored.spine, 8.5);
+  await click("close");
+  await nodes.get("jcard-btn").emit("click");
+  assert.equal(node("spine-mode").value, "custom");
+  assert.equal(Number(node("spine").value), 8.5);
+  await change("spine-mode", "standard");
+  runTimers();
+  await tick();
+  assert.equal(stored.spine, 12);
+  assert.equal(node("spine").disabled, true);
   const front = copy(stored.elements);
   assert.equal(stored.backElements.length, 0);
   assert.equal(stored.backBackground, "#ffffff");

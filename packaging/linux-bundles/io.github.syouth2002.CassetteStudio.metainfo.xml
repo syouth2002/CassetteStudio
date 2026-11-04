@@ -10,6 +10,6 @@
   <url type="homepage">https://github.com/syouth2002/CassetteStudio</url>
   <developer id="io.github.syouth2002"><name>syouth2002</name></developer>
   <provides><binary>cassette-studio</binary></provides>
-  <releases><release version="0.1.9" date="2026-11-03"/></releases>
+  <releases><release version="0.1.10" date="2026-11-04"/></releases>
   <content_rating type="oars-1.1"/>
 </component>

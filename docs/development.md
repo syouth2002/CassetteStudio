@@ -38,14 +38,14 @@ Install Xcode Command Line Tools, Rust stable and FFmpeg.
 
 ```sh
 cargo run --release --features desktop --bin cassette-studio-desktop --locked
-sh scripts/package-public-macos.sh 0.1.9
+sh scripts/package-public-macos.sh 0.1.10
 ```
 
 This builds the current CPU. Apple Silicon and Intel packages use separate Mac runners.
 
 ## Arch Linux
 
-Place the release's `PKGBUILD` and `CassetteStudio-0.1.9-Arch-source.tar.gz` in an empty directory, inspect them, then build as a regular user.
+Place the release's `PKGBUILD` and `CassetteStudio-0.1.10-Arch-source.tar.gz` in an empty directory, inspect them, then build as a regular user.
 
 ```sh
 sudo pacman -S --needed base-devel rust pkgconf python
@@ -58,12 +58,12 @@ PKGBUILD checks the source SHA-256. `packaging/arch/PKGBUILD.in` is the template
 
 | Platform | Procedure |
 | --- | --- |
-| Windows | `scripts/package-public-windows.ps1 -Version 0.1.9` |
+| Windows | `scripts/package-public-windows.ps1 -Version 0.1.10` |
 | All Linux formats | Build native binaries, then `sh scripts/package-all-linux.sh` |
-| macOS | `sh scripts/package-public-macos.sh 0.1.9` on each CPU |
+| macOS | `sh scripts/package-public-macos.sh 0.1.10` on each CPU |
 | Arch | makepkg above, or `.github/workflows/arch.yml` |
 
-Output goes to `dist/releases/v0.1.9`. License collection needs Python 3 and notices supplied with the Rust toolchain.
+Output goes to `dist/releases/v0.1.10`. License collection needs Python 3 and notices supplied with the Rust toolchain.
 
 `package-windows.ps1` and `package-linux.sh` are separate local helpers bundling external tools. Their output differs from public Windows/traditional Linux downloads; do not mix their usage instructions. Review [redistribution requirements](../THIRD_PARTY_NOTICES.md).
 
@@ -127,7 +127,7 @@ Audio checks require FFmpeg/FFprobe in `tools` or configured through environment
 
 Tests use synthetic media and isolated libraries under `work`, not the normal library.
 
-After installing a test Flatpak, run `sh scripts/test-linux-bundles.sh --appimage ./dist/linux-bundles/CassetteStudio-0.1.9-x86_64.AppImage` for coexistence/storage/audio checks. `scripts/test-macos-package.py` and `scripts/test-arch-package.py` check packaged apps in their native environments. See [physical-device validation limits](installation.md#coverage).
+After installing a test Flatpak, run `sh scripts/test-linux-bundles.sh --appimage ./dist/linux-bundles/CassetteStudio-0.1.10-x86_64.AppImage` for coexistence/storage/audio checks. `scripts/test-macos-package.py` and `scripts/test-arch-package.py` check packaged apps in their native environments. See [physical-device validation limits](installation.md#coverage).
 
 ## Source organization and research
 

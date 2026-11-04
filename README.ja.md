@@ -6,7 +6,7 @@
 
 カセットテープの選曲、録音用の再生、WAV出力、J-CARD作成を行うアプリです。Windows・Linux・macOSでは専用ウィンドウで使えます。日本語・英語に対応しています。
 
-**最新版：v0.1.9** — [ダウンロード](https://github.com/syouth2002/CassetteStudio/releases/latest) · [今回の変更点](docs/release-notes-0.1.9.md)
+**最新版：v0.1.10** — [ダウンロード](https://github.com/syouth2002/CassetteStudio/releases/latest) · [今回の変更点](docs/release-notes-0.1.10.md)
 
 ## 読む順番
 

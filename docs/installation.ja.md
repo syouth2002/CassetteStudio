@@ -8,16 +8,16 @@
 
 [GitHub Releases](https://github.com/syouth2002/CassetteStudio/releases/latest)から取得します。通常利用にRustやVisual Studioは不要です。
 
-| 環境 | v0.1.9のファイル | 音声・URLツール |
+| 環境 | v0.1.10のファイル | 音声・URLツール |
 | --- | --- | --- |
-| Windows x64 | `CassetteStudio-0.1.9-Windows-x64.zip` | 同梱のセットアップで取得 |
-| Ubuntu 24.04 x64 | `CassetteStudio-0.1.9-Ubuntu24-amd64.deb` | FFmpegは依存関係として導入。URL用ツールは追加導入 |
-| Linux従来版 x64 | `CassetteStudio-0.1.9-Linux-Ubuntu24-x64.tar.gz` | 外部ツール・画面用ライブラリを別途導入 |
-| Linux Flatpak x86_64 | `CassetteStudio-0.1.9-x86_64.flatpak` | 同梱。GNOME 49ランタイムを使用 |
-| Linux AppImage x86_64 | `CassetteStudio-0.1.9-x86_64.AppImage` | 同梱。glibc 2.39以降のUbuntu 24.04互換環境向け |
-| Arch Linux x86_64 | `cassette-studio-0.1.9-1-x86_64.pkg.tar.zst` | FFmpegなどはpacmanで導入。URL用ツールは追加導入 |
-| macOS 15以降・Apple Silicon | `CassetteStudio-0.1.9-macOS-arm64.zip` | Homebrewなどで別途導入 |
-| macOS 15以降・Intel | `CassetteStudio-0.1.9-macOS-x64.zip` | Homebrewなどで別途導入 |
+| Windows x64 | `CassetteStudio-0.1.10-Windows-x64.zip` | 同梱のセットアップで取得 |
+| Ubuntu 24.04 x64 | `CassetteStudio-0.1.10-Ubuntu24-amd64.deb` | FFmpegは依存関係として導入。URL用ツールは追加導入 |
+| Linux従来版 x64 | `CassetteStudio-0.1.10-Linux-Ubuntu24-x64.tar.gz` | 外部ツール・画面用ライブラリを別途導入 |
+| Linux Flatpak x86_64 | `CassetteStudio-0.1.10-x86_64.flatpak` | 同梱。GNOME 49ランタイムを使用 |
+| Linux AppImage x86_64 | `CassetteStudio-0.1.10-x86_64.AppImage` | 同梱。glibc 2.39以降のUbuntu 24.04互換環境向け |
+| Arch Linux x86_64 | `cassette-studio-0.1.10-1-x86_64.pkg.tar.zst` | FFmpegなどはpacmanで導入。URL用ツールは追加導入 |
+| macOS 15以降・Apple Silicon | `CassetteStudio-0.1.10-macOS-arm64.zip` | Homebrewなどで別途導入 |
+| macOS 15以降・Intel | `CassetteStudio-0.1.10-macOS-x64.zip` | Homebrewなどで別途導入 |
 
 配布物には日英ドキュメント・画面画像・依存ライブラリのライセンスを含めています。整合性は同じリリースの`SHA256SUMS.txt`で確認できます。Arch用ソース・PKGBUILD、Linux同梱ライブラリ用ソースは再ビルドなどに使うもので、通常の起動には不要です。
 
@@ -35,7 +35,7 @@
 ### Ubuntu
 
 ```sh
-sudo apt install ./CassetteStudio-0.1.9-Ubuntu24-amd64.deb
+sudo apt install ./CassetteStudio-0.1.10-Ubuntu24-amd64.deb
 ```
 
 アプリ一覧からCassette Studioを起動します。GTK・WebKitGTK・FFmpegなどは依存関係として導入されます。URL取り込みには最新の[yt-dlp](https://github.com/yt-dlp/yt-dlp#installation)とNode.js 22以上も用意してください。
@@ -50,7 +50,7 @@ tar.gzを展開し、`CassetteStudio`を起動します。Ubuntu 24.04互換のx
 
 ```sh
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-flatpak install --user ./CassetteStudio-0.1.9-x86_64.flatpak
+flatpak install --user ./CassetteStudio-0.1.10-x86_64.flatpak
 flatpak run io.github.syouth2002.CassetteStudio//local
 ```
 
@@ -63,14 +63,14 @@ FFmpeg・FFprobe・yt-dlp・Node.jsと日本語・記号フォントを同梱し
 ### AppImage
 
 ```sh
-chmod +x CassetteStudio-0.1.9-x86_64.AppImage
-./CassetteStudio-0.1.9-x86_64.AppImage
+chmod +x CassetteStudio-0.1.10-x86_64.AppImage
+./CassetteStudio-0.1.10-x86_64.AppImage
 ```
 
 FUSEが使えない場合：
 
 ```sh
-APPIMAGE_EXTRACT_AND_RUN=1 ./CassetteStudio-0.1.9-x86_64.AppImage
+APPIMAGE_EXTRACT_AND_RUN=1 ./CassetteStudio-0.1.10-x86_64.AppImage
 ```
 
 GTK・WebKitGTK、音声・URLツール、日本語・記号フォントを同梱します。基礎ライブラリやグラフィックドライバーはOSを利用するため、すべてのLinux環境での動作を保証するものではありません。現在のビルドはglibc 2.39以降のUbuntu 24.04互換環境向けです。
@@ -81,7 +81,7 @@ GTK・WebKitGTK、音声・URLツール、日本語・記号フォントを同�
 
 ```sh
 sudo pacman -Syu
-sudo pacman -U ./cassette-studio-0.1.9-1-x86_64.pkg.tar.zst
+sudo pacman -U ./cassette-studio-0.1.10-1-x86_64.pkg.tar.zst
 cassette-studio
 ```
 

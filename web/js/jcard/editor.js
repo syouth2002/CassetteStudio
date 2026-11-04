@@ -16,6 +16,7 @@ const JCardEditor = (() => {
     saveError = "",
     closing = false;
   let elementClipboard = null;
+  let customSpine = false;
   const $j = (id) => document.getElementById("jc-" + id),
     t = (ja) => csText(ja);
   const elements = () => (face === "back" ? doc.backElements : doc.elements);
@@ -186,6 +187,9 @@ const JCardEditor = (() => {
       .join("");
     for (const key of ["front", "spine", "flap", "height", "background"])
       $j(key).value = key === "background" ? doc[backgroundKey()] : doc[key];
+    if (doc.spine !== 12) customSpine = true;
+    $j("spine-mode").value = customSpine ? "custom" : "standard";
+    $j("spine").disabled = !customSpine;
     $j("face").value = face;
     $j("paper").value = doc.paper;
     $j("margin").value = doc.margin;
@@ -206,6 +210,7 @@ const JCardEditor = (() => {
       await saveChain;
       const stored = await api("/api/jcards/" + encodeURIComponent(target.id));
       doc = stored ? M.upgrade(stored) : M.create(target, lib.tracks);
+      customSpine = doc.spine !== 12;
       face = "front";
       saveError = "";
       closing = false;
@@ -608,6 +613,23 @@ const JCardEditor = (() => {
         render();
       }
     });
+    $j("spine-mode").addEventListener("change", () => {
+      customSpine = $j("spine-mode").value === "custom";
+      if (customSpine) {
+        render();
+        $j("spine").focus();
+      } else {
+        const next = M.clone(doc);
+        next.spine = 12;
+        try {
+          M.validate(next);
+          mutate(() => (doc = next));
+        } catch (error) {
+          toast(error.message);
+          render();
+        }
+      }
+    });
     for (const key of [
       "front",
       "spine",
@@ -656,6 +678,7 @@ const JCardEditor = (() => {
         const next = M.validate(JSON.parse(await file.text()));
         mutate(() => {
           doc = M.upgrade(next);
+          customSpine = doc.spine !== 12;
           face = "front";
           chosen = null;
         });
