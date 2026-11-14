@@ -18,12 +18,13 @@ for package in sorted(metadata['packages'],key=lambda p:(p['name'],p['version'])
     folder=output/(package['name']+'-'+package['version']);folder.mkdir(exist_ok=True)
     files=[p for p in root.rglob('*') if p.is_file() and p.name.upper().startswith(('LICENSE','LICENCE','COPYING','COPYRIGHT','NOTICE','AUTHORS'))]
     if package.get('license_file'):files.append(root/package['license_file'])
+    if package['name']=='epaint_default_fonts':files.extend((root/'fonts').glob('*.txt'))
     for file in set(files):
         relative=file.relative_to(root);dest=folder/relative;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(file,dest)
     if not files and not any(p.is_file() and p.stat().st_size>0 and (p.name.upper().startswith(('LICENSE','COPYING','NOTICE')) or p.name=='CC0-1.0.txt')for p in folder.iterdir()):
         # Some workspace crates omit the repository's license when published.
         # Retrieve root notices from their exact source commit, never a branch.
-        repo=(package.get('repository') or ('https://github.com/etemesi254/zune-image' if package['name'].startswith('zune-') else '')).removesuffix('.git').rstrip('/')
+        repo=(package.get('repository') or package.get('homepage') or '').replace('http://github.com/','https://github.com/').removesuffix('.git').rstrip('/')
         match=re.match(r'(https://github.com/[\w.-]+/[\w.-]+)(?:/|$)',repo)
         if match:repo=match[1]
         if not match:

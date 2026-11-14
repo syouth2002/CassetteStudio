@@ -20,6 +20,9 @@ cargo clippy --workspace --features desktop --all-targets -- -D warnings
 
 `wasm-bindgen-cli`はCargo.lockと同じバージョンを使います。Windowsでは`target/release/cassette-studio-desktop.exe`、Linux/macOSでは同名の拡張子なし実行ファイルが専用ウィンドウ版です。`cassette-studio`はブラウザ用ローカルエンジンです。Visual StudioのソリューションもCargoを呼び出します。
 
+<a id="linux-bundles"></a>
+<a id="validation"></a>
+
 ## 配布物
 
 - Windows：実行ファイル・`SetupAudioTools.cmd`・日英ガイド・画像・ライセンスをZIP化します。

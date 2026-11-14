@@ -6,6 +6,10 @@ on:
         description: 'Optional successful run ID to reuse binaries for packaging-only changes'
         required: false
         type: string
+      web_run:
+        description: 'Run ID containing shared rust-ui-web assets'
+        required: false
+        type: string
 permissions:
   contents: read
   actions: read
@@ -28,6 +32,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Toolchain and audio tools
         run: |
           if [ -z "$SOURCE_RUN" ]; then
@@ -42,8 +49,15 @@ jobs:
           path: dist/prebuilt
           run-id: ${{ inputs.source_run }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        if: inputs.web_run != ''
+        with:
+          name: rust-ui-web
+          path: ui/web/pkg
+          run-id: ${{ inputs.web_run }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build shared Rust browser assets
-        if: inputs.source_run == ''
+        if: inputs.source_run == '' && inputs.web_run == ''
         run: |
           cargo install wasm-bindgen-cli --version 0.2.129 --locked
           python3 scripts/build-rust-ui-web.py

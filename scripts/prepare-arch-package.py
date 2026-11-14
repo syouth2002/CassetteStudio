@@ -1,5 +1,5 @@
 """Create a checksummed source snapshot including the generated common WASM UI."""
-import hashlib,pathlib,subprocess,tarfile,io,tomllib
+import hashlib,pathlib,subprocess,tarfile,io,tomllib,os
 root=pathlib.Path(__file__).resolve().parent.parent
 version=tomllib.loads((root/'Cargo.toml').read_text())['package']['version']
 output=root/'dist/arch';output.mkdir(parents=True,exist_ok=True)
@@ -10,7 +10,7 @@ with tarfile.open(fileobj=io.BytesIO(archive))as original,tarfile.open(source,'w
     for member in original:
         target.addfile(member,original.extractfile(member)if member.isfile()else None)
     for name in ['cassette_ui.js','cassette_ui_bg.wasm']:
-        asset=root/'ui/web/pkg'/name
+        asset=pathlib.Path(os.environ.get('CASSETTE_UI_ASSETS',str(root/'ui/web/pkg')))/name
         if not asset.is_file():raise RuntimeError('Build the common WASM UI first: '+str(asset))
         target.add(asset,arcname=prefix+'ui/web/pkg/'+name)
 digest=hashlib.sha256(source.read_bytes()).hexdigest()

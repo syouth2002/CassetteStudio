@@ -191,6 +191,7 @@ def main():
     parser.add_argument('--cache',type=pathlib.Path,default=pathlib.Path('/var/tmp/cassette-bundle-downloads'))
     parser.add_argument('--output',type=pathlib.Path,default=ROOT/'dist/linux-bundles')
     args=parser.parse_args();args.version=VERSION
+    args.output=args.output.resolve();args.binaries=args.binaries.resolve()
     if os.uname().machine!='x86_64':raise RuntimeError('This builder currently targets x86_64 only')
     for path in [args.build_dir,args.output,args.cache]:path.mkdir(parents=True,exist_ok=True)
     globals()[args.format](args,args.build_dir.resolve(),args.cache.resolve())

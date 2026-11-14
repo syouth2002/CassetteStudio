@@ -20,6 +20,9 @@ cargo clippy --workspace --features desktop --all-targets -- -D warnings
 
 Match wasm-bindgen-cli to Cargo.lock. `target/release/cassette-studio-desktop` (with `.exe` on Windows) is the native application; `cassette-studio` is the local browser engine. The Visual Studio solution invokes Cargo too.
 
+<a id="linux-bundles"></a>
+<a id="validation"></a>
+
 ## Packages and checks
 
 Windows ZIPs contain the application, tool setup helper, bilingual guides, screenshots and licenses. Build Linux with `scripts/build-linux-wsl.sh`, package DEB/tar.gz with `package-public-linux.sh`, and create Flatpak/AppImage bundles with `build-linux-bundles.py`. Bundles use egui, ALSA and a PulseAudio-compatible audio server. `.github/workflows/release-builds.yml` builds shared WASM assets and native macOS/Arch packages, then runs isolated audio and persistence checks. Arch source snapshots include the generated shared WASM assets.

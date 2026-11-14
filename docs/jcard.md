@@ -31,9 +31,9 @@ Use **Editing side**. Manually add text/images inside if desired. Text remains r
 | --- | --- |
 | Resize | Drag corner/edge squares; font size stays fixed and text reflows |
 | Rotate | Drag the top circle; hold Shift for 15-degree steps |
-| Move | Drag, or use arrows on the canvas (0.5 mm; Shift: 5 mm) |
+| Move | Drag, or use numeric position fields in the right pane |
 | Align | Left-pane snapping, center controls or numeric properties |
-| Stack, duplicate, delete | Top toolbar |
+| Stack, duplicate, delete | Context menu or right pane |
 | Undo | Undo/redo; Esc cancels an active drag |
 
 Resizing a rotated box keeps its opposite anchor fixed. Zoom/snapping are in the left pane; handle instructions appear above Color in the right pane.
