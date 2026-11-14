@@ -8,6 +8,7 @@ source_dir=$(mktemp -d "$build_dir/source.XXXXXX")
 export CARGO_TARGET_DIR="$build_dir/target"
 cp "$project/Cargo.toml" "$project/Cargo.lock" "$source_dir/"
 cp -r "$project/src" "$project/web" "$project/assets" "$source_dir/"
+cp -r "$project/ui" "$project/.cargo" "$source_dir/"
 cp "$project/build.rs" "$source_dir/"
 export RUSTUP_HOME=/var/tmp/cassette-rustup
 export CARGO_HOME=/var/tmp/cassette-cargo

@@ -1,5 +1,7 @@
 #!/bin/sh
 set -eu
+export ALSA_PLUGIN_DIR=/app/lib/alsa-lib
+export ALSA_CONFIG_PATH=/app/share/cassette-studio/asound.conf
 : "${XDG_DATA_HOME:=$HOME/.local/share}"
 export CASSETTE_DATA="${CASSETTE_DATA:-$XDG_DATA_HOME/cassette-studio-flatpak}"
 export CASSETTE_PORT="${CASSETTE_PORT:-0}"

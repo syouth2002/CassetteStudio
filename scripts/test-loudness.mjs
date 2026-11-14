@@ -1,3 +1,4 @@
+import {engineUrl} from './engine-test-url.mjs';
 import {spawn,spawnSync} from 'node:child_process';
 import {mkdir,writeFile,readFile,copyFile} from 'node:fs/promises';
 import path from 'node:path';
@@ -14,8 +15,8 @@ for(const [file,volume]of [[quiet,.1],[loud,1]])run(['-f','lavfi','-i','sine=fre
 const legacy={id:randomUUID(),title:'旧データの小さな曲',artist:'Test',filename:'legacy.wav',source:'local',duration:8,trim_start:0,trim_end:8};
 await copyFile(quiet,path.join(data,'sources',legacy.id));
 await writeFile(path.join(data,'library.json'),JSON.stringify({tracks:[legacy],collections:[]}));
-const server=spawn(path.join(root,'target','debug',`cassette-studio${process.platform==='win32'?'.exe':''}`),[],{cwd:root,windowsHide:true,env:{...process.env,CASSETTE_PORT:'3213',CASSETTE_DATA:data},stdio:'ignore'});
-const base='http://127.0.0.1:3213';
+const server=spawn(path.join(root,'target','debug',`cassette-studio${process.platform==='win32'?'.exe':''}`),[],{cwd:root,windowsHide:true,env:{...process.env,CASSETTE_PORT:'0',CASSETTE_DATA:data},stdio:['ignore','pipe','pipe']});
+let base;
 async function api(route,body,method='POST'){const r=await fetch(base+route,body===undefined?{}:{method,headers:{'content-type':'application/json'},body:JSON.stringify(body)});const j=await r.json();assert.ok(r.ok,JSON.stringify(j));return j;}
 const s={side_seconds:16,gap:0,fill_threshold:30,fade:1,continuation:'resume',silence_db:-50,silence_min:.2,normalize:true,target_lufs:-18,peak_db:-1};
 const entry=(id,offset=0,duration=8)=>({track_id:id,offset,duration,fade_in:0,fade_out:0,continuation:false});
@@ -23,7 +24,7 @@ async function download(url,name){const file=path.join(dir,name);await writeFile
 function measure(file,start=0,length=8){const filter=`atrim=start=${start}:duration=${length},asetpts=PTS-STARTPTS,loudnorm=I=-18:TP=-1:LRA=50:print_format=json`;const out=run(['-i',file,'-af',filter,'-f','null','-']).stderr;const text=out.slice(out.lastIndexOf('{'),out.lastIndexOf('}')+1);const j=JSON.parse(text);return {i:+j.input_i,peak:+j.input_tp};}
 const near=(a,b,tolerance=.2)=>assert.ok(Math.abs(a-b)<tolerance,`${a} != ${b}`);
 try{
- for(let i=0;i<80;i++){try{await fetch(base+'/api/library');break;}catch{await new Promise(r=>setTimeout(r,100));if(i===79)throw Error('Startup timeout');}}
+ base=await engineUrl(server);
  const imported=new FormData();imported.append('files',new Blob([await readFile(loud)]),'Loud.wav');
  const response=await(await fetch(base+'/api/import',{method:'POST',body:imported})).json();assert.equal(response.errors.length,0,JSON.stringify(response));const loudTrack=response.tracks[0];assert.ok(loudTrack.loudness.integrated_lufs<0);
  const ids=[legacy.id,loudTrack.id],stats=await api('/api/loudness',{tracks:ids,settings:s});assert.equal(stats.tracks.length,2);near(stats.tracks[1].loudness.integrated_lufs-stats.tracks[0].loudness.integrated_lufs,20,.1);

@@ -6,9 +6,11 @@
 
 カセットテープの選曲、録音用の再生、WAV出力、J-CARD作成を行うアプリです。Windows・Linux・macOSでは専用ウィンドウで使えます。日本語・英語に対応しています。
 
-**最新版：v0.1.10** — [ダウンロード](https://github.com/syouth2002/CassetteStudio/releases/latest) · [今回の変更点](docs/release-notes-0.1.10.md)
+**最新版：v0.2.0** — [ダウンロード](https://github.com/syouth2002/CassetteStudio/releases/latest) · [今回の変更点](docs/release-notes-0.2.0.md)
 
 ## 読む順番
+
+v0.2.0はRust製UI（egui／eframe）を採用し、各OSの専用ウィンドウとブラウザで共通の画面を使います。[UIとビルドの詳細](docs/rust-ui.ja.md)を参照してください。
 
 | 目的 | 説明 |
 | --- | --- |
@@ -39,7 +41,7 @@
 2. 「ファイル追加」またはD&Dで音源を取り込みます。
 3. 曲を選び、「選択／曲順で作成」または「自動でカセット作成」を使います。
 4. 「録音設定」で片面の時間・曲間・音量設定を確認し、試聴します。
-5. 「WAV生成」で保存するか、「デッキ録音用に準備」でデッキへ音声を送ります。
+5. 「WAV出力・デッキ録音」でWAVを保存するか、録音専用モードでデッキへ音声を送ります。
 
 操作の詳細と設定の適用範囲は[使い方・機能の仕様](docs/usage.ja.md)にまとめています。
 
@@ -53,7 +55,7 @@
 
 Windows x64、Ubuntu 24.04 x64、Linux従来版／Flatpak／AppImage、Arch Linux x86_64、macOS 15以降（Apple Silicon／Intel）向けを配布します。ローカルのブラウザ画面でも利用できます。[各形式の必要条件と導入方法](docs/installation.ja.md)を確認してください。
 
-画像には架空の曲名と合成音源を使用しています。ユーザーのライブラリや音楽は含みません。
+画像は共通Rust UIのブラウザ表示です。架空の曲名と合成音源を使用しています。ユーザーのライブラリや音楽は含みません。
 
 ## ライセンス
 

@@ -18,6 +18,7 @@ pub(super) fn routes(root: &std::path::Path) -> Router<App> {
     Router::new()
         .route("/api/library", get(library))
         .route("/api/status", get(status))
+        .route("/api/tracks/{id}/properties", get(track_properties))
         .route("/api/import", post(import))
         .route("/api/url", post(import_url))
         .route("/api/collections", post(save_collection))
@@ -26,6 +27,7 @@ pub(super) fn routes(root: &std::path::Path) -> Router<App> {
         .route("/api/fill-cassettes", post(fill_cassettes))
         .route("/api/render", post(render))
         .route("/api/preview/{id}", post(preview))
+        .route("/api/audition/{id}", post(audition))
         .route("/api/reanalyze", put(reanalyze))
         .route("/api/loudness", post(loudness))
         .route("/api/mono", post(detect_mono))
@@ -44,6 +46,22 @@ pub(super) fn routes(root: &std::path::Path) -> Router<App> {
 async fn library(State(app): State<App>) -> Api<Library> {
     Ok(Json(app.snapshot()?))
 }
+async fn track_properties(
+    State(app): State<App>,
+    Path(id): Path<String>,
+) -> Api<serde_json::Value> {
+    let track = app
+        .snapshot()?
+        .tracks
+        .into_iter()
+        .find(|t| t.id == id)
+        .ok_or(Error("曲が見つかりません".into()))?;
+    let root = app.root.clone();
+    Ok(Json(
+        app.work(move || audio::properties(&root, &track)).await?,
+    ))
+}
+
 #[derive(Deserialize)]
 struct MonoRequest {
     tracks: Vec<String>,
@@ -166,6 +184,15 @@ async fn import(State(app): State<App>, mut multi: Multipart) -> Api<serde_json:
                 .await?;
             t.content_hash = Some(hash);
             pending.move_to(app.root.join("sources").join(&id))?;
+            let graph_root = app.root.clone();
+            let graph_track = t.clone();
+            let graph_settings = settings.clone();
+            if graph_track.audible() > 0. {
+                app.work(move || {
+                    audio::prepare_track_graphs(&graph_root, &graph_track, &graph_settings)
+                })
+                .await?;
+            }
             app.update(|lib| {
                 lib.tracks.push(t.clone());
                 Ok(())
@@ -195,6 +222,7 @@ async fn import_url(State(app): State<App>, Json(body): Json<UrlRequest>) -> Api
     body.settings.validate()?;
     let _import_guard = app.imports.lock().await;
     let root = app.root.clone();
+    let graph_settings = body.settings.clone();
     let mut t = app
         .work(move || audio::import_url(&root, &body.url, &body.settings))
         .await?;
@@ -206,6 +234,12 @@ async fn import_url(State(app): State<App>, Json(body): Json<UrlRequest>) -> Api
         return Ok(Json(existing));
     }
     t.content_hash = Some(hash);
+    if t.audible() > 0. {
+        let root = app.root.clone();
+        let track = t.clone();
+        app.work(move || audio::prepare_track_graphs(&root, &track, &graph_settings))
+            .await?;
+    }
     app.update(|lib| {
         lib.tracks.push(t.clone());
         Ok(())
@@ -419,6 +453,51 @@ async fn preview(
         serde_json::json!({"url":format!("/media/{name}"),"track":response_track}),
     ))
 }
+// Audition temporary per-track settings without changing the library or source.
+#[derive(Deserialize)]
+struct AuditionRequest {
+    settings: Settings,
+    gain_db: f64,
+    strength: u8,
+}
+async fn audition(
+    State(app): State<App>,
+    Path(id): Path<String>,
+    Json(body): Json<AuditionRequest>,
+) -> Api<serde_json::Value> {
+    body.settings.validate()?;
+    if !body.gain_db.is_finite() || !(-24.0..=24.0).contains(&body.gain_db) || body.strength > 3 {
+        return Err(Error("音量または疑似ステレオの設定が不正です".into()));
+    }
+    let mut track = app
+        .ensure_loudness(std::slice::from_ref(&id))
+        .await?
+        .into_iter()
+        .next()
+        .ok_or(Error("曲が見つかりません".into()))?;
+    if body.strength > 0 && track.mono != Some(true) {
+        return Err(Error("疑似ステレオ化はモノラルの曲だけ選択できます".into()));
+    }
+    let changed = track.pseudo_stereo != body.strength;
+    track.manual_gain_db = body.gain_db;
+    track.pseudo_stereo = body.strength;
+    if changed {
+        track.pseudo_analysis = None;
+    }
+    let root = app.root.clone();
+    let url = app
+        .work(move || {
+            if changed && track.pseudo_stereo > 0 {
+                audio::measure_track(&root.join("sources").join(&id), &mut track)?;
+            }
+            let name = audio::preview_name(&track, &body.settings);
+            audio::preview(&root, &track, &body.settings)?;
+            Ok(format!("/media/{name}"))
+        })
+        .await?;
+    Ok(Json(serde_json::json!({"url":url})))
+}
+
 #[derive(Deserialize)]
 struct LoudnessRequest {
     tracks: Vec<String>,
@@ -430,6 +509,16 @@ async fn loudness(
 ) -> Api<serde_json::Value> {
     body.settings.validate()?;
     let tracks = app.ensure_loudness(&body.tracks).await?;
+    let graph_root = app.root.clone();
+    let graph_tracks = tracks.clone();
+    let graph_settings = body.settings.clone();
+    app.work(move || {
+        for track in graph_tracks.iter().filter(|t| t.audible() > 0.) {
+            audio::prepare_track_graphs(&graph_root, track, &graph_settings)?;
+        }
+        Ok(())
+    })
+    .await?;
     let reports = tracks
         .iter()
         .map(|t| audio::gain(t, &body.settings).map(|report| (t.id.clone(), report)))

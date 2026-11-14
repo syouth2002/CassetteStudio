@@ -1,6 +1,6 @@
 [package]
 name = "cassette-studio"
-version = "0.1.10"
+version = "0.2.0"
 edition = "2024"
 description = "Cross-platform cassette playlist editor and audio renderer"
 license = "MIT"
@@ -9,7 +9,7 @@ default-run = "cassette-studio"
 
 [features]
 default = []
-desktop = ["dep:wry", "dep:tao", "dep:rfd"]
+desktop = ["dep:cassette-ui"]
 
 [[bin]]
 name = "cassette-studio-desktop"
@@ -28,9 +28,11 @@ fs2 = "0.4"
 directories = "6"
 encoding_rs = "0.8"
 sha2 = "0.10.9"
-wry = { version = "0.57", optional = true }
-tao = { version = "0.37", optional = true }
-rfd = { version = "0.17", optional = true }
+cassette-ui = { path = "ui", optional = true }
+[workspace]
+members = ["ui"]
+default-members = ["."]
+resolver = "2"
 
 [target.'cfg(windows)'.build-dependencies]
 winresource = { version = "0.1", default-features = false }

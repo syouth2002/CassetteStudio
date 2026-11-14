@@ -1,0 +1,22 @@
+// Run through the disposable synthetic fixture, never against a user library.
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');const {chromium}=require(process.env.CASSETTE_PLAYWRIGHT_MODULE);
+(async()=>{const b=await chromium.launch({headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});try{const p=await b.newPage({viewport:{width:1280,height:850},locale:'ja-JP'}),base=process.argv[2],out=process.argv[3];for(const name of ['cassette_ui.js','cassette_ui_bg.wasm'])await p.route('**/ui/'+name,r=>r.fulfill({body:fs.readFileSync(path.join(process.env.CASSETTE_UI_ASSET_DIR,name)),contentType:name.endsWith('.wasm')?'application/wasm':'text/javascript'}));
+await p.addInitScript(()=>{window.audioPlays=0;const play=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(...args){window.currentAudio=this;window.audioPlays++;return play.apply(this,args)}});
+const lib=async()=>await(await p.request.get(base+'api/library')).json();assert.equal((await lib()).collections.find(c=>c.kind==='cassette').id,'00000000-0000-4000-8000-000000000019');let renders=0,reads=0;p.on('request',r=>{if(r.method()==='POST'&&r.url().endsWith('/api/render'))renders++;if(r.method()==='GET'&&r.url().endsWith('.wav'))reads++});
+await p.goto(base);await p.waitForFunction(()=>!document.getElementById('loading'));await p.waitForTimeout(900);const click=async(x,y)=>{await p.mouse.move(x,y);await p.waitForTimeout(100);await p.mouse.click(x,y,{delay:65});await p.waitForTimeout(350)},shot=n=>p.screenshot({path:path.join(out,n+'.png')});await click(90,330);
+await click(1180,266);for(let i=0;i<100;i++){if(renders===1&&reads>=1)break;await p.waitForTimeout(100)}await p.waitForTimeout(650);await shot('first-ready');assert.equal(renders,1);const initialReads=reads;
+await click(448,458);await p.waitForTimeout(500);assert.equal(renders,1);assert.equal(reads,initialReads+1);await shot('side-b');
+await click(462,541);await p.waitForFunction(()=>window.audioPlays===1);assert.equal(renders,1);await shot('playing-b');
+await click(462,541);assert.ok(await p.evaluate(()=>window.currentAudio.paused),'Pause works inside the modal');
+await click(462,541);assert.ok(await p.evaluate(()=>!window.currentAudio.paused),'Resume works inside the modal');
+await click(500,572);assert.ok(await p.evaluate(()=>window.currentAudio.currentTime>5),'Modal seek changes playback position');
+await click(400,598);assert.ok(await p.evaluate(()=>window.currentAudio.volume<.8),'Modal volume changes player output');
+await click(400,458);assert.ok(await p.evaluate(()=>window.currentAudio.paused),'Switching sides must stop the previous side');await p.waitForTimeout(500);assert.equal(renders,1);
+const before=await p.evaluate(()=>window.audioPlays);await click(350,541);await shot('countdown');await p.waitForFunction(n=>window.audioPlays>n,before,{timeout:8000});await shot('playing-a');assert.equal(renders,1);
+await click(530,541);assert.ok(await p.evaluate(()=>window.currentAudio.paused),'Stop works inside the modal');
+const stopped=await p.evaluate(()=>window.audioPlays);await click(350,541);await click(530,554);await p.waitForTimeout(5300);assert.equal(await p.evaluate(()=>window.audioPlays),stopped,'Stop cancels a pending countdown');
+await click(462,541);await p.waitForFunction(n=>window.audioPlays>n,stopped);await click(942,258);assert.ok(await p.evaluate(()=>window.currentAudio.paused),'Closing recording mode must stop its audio');
+await shot('closed-recording');
+await click(670,798);await p.waitForTimeout(300);assert.equal(await p.evaluate(()=>window.currentAudio.volume),1,'Recording volume must not change main transport volume');await click(711,798);
+await click(1180,266);await p.waitForTimeout(400);const pending=await p.evaluate(()=>window.audioPlays);await click(350,541);await p.keyboard.press('Escape');await p.waitForTimeout(5400);assert.equal(await p.evaluate(()=>window.audioPlays),pending,'Closing recording mode must cancel its countdown');
+console.log('PASS: isolated recording player, independent volume, stop on close, cancel countdown on close, side selection, playback/pause/seek and WAV reuse');}finally{await b.close()}})().catch(e=>{console.error(e);process.exitCode=1});

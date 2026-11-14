@@ -6,6 +6,10 @@ parser.add_argument('--target',required=True)
 parser.add_argument('--output',required=True)
 args=parser.parse_args()
 output=pathlib.Path(args.output);output.mkdir(parents=True,exist_ok=True)
+fonts=pathlib.Path(__file__).resolve().parent.parent/'assets/fonts'
+for font in fonts.glob('*-OFL.txt'):
+    folder=output/font.stem.removesuffix('-OFL');folder.mkdir(exist_ok=True)
+    shutil.copy2(font,folder/'OFL.txt')
 metadata=json.loads(subprocess.check_output(['cargo','metadata','--locked','--offline','--all-features','--filter-platform',args.target,'--format-version','1']))
 rows=[]
 for package in sorted(metadata['packages'],key=lambda p:(p['name'],p['version'])):
@@ -20,22 +24,33 @@ for package in sorted(metadata['packages'],key=lambda p:(p['name'],p['version'])
         # Some workspace crates omit the repository's license when published.
         # Retrieve root notices from their exact source commit, never a branch.
         repo=(package.get('repository') or '').removesuffix('.git').rstrip('/')
-        if not re.fullmatch(r'https://github.com/[\w.-]+/[\w.-]+',repo):
+        match=re.match(r'(https://github.com/[\w.-]+/[\w.-]+)(?:/|$)',repo)
+        if match:repo=match[1]
+        if not match:
             raise RuntimeError('Missing license text for '+package['name'])
         commit=json.loads((root/'.cargo_vcs_info.json').read_text())['git']['sha1']
         found=False
-        for name in ['LICENSE','LICENSE-MIT','LICENSE-APACHE','LICENSE.md','LICENSE.txt','NOTICE']:
+        for name in ['LICENSE','LICENSE-MIT','LICENSE-APACHE','LICENSE.md','LICENSE.txt','NOTICE','COPYING','UNLICENSE','LICENSE-CC0']:
             url=f'https://raw.githubusercontent.com/{repo.removeprefix("https://github.com/")}/{commit}/{name}'
             try:body=urllib.request.urlopen(url,timeout=30).read()
             except urllib.error.HTTPError as error:
                 if error.code==404:continue
                 raise
             (folder/name).write_bytes(body);found=True
+        if not found and package.get('license')=='CC0-1.0':
+            readme=root/'README.md'
+            if not readme.exists():
+                body=urllib.request.urlopen(f'https://raw.githubusercontent.com/{repo.removeprefix("https://github.com/")}/{commit}/README.md',timeout=30).read()
+            else:body=readme.read_bytes()
+            (folder/'Cargo.toml').write_bytes((root/'Cargo.toml').read_bytes())
+            (folder/'UPSTREAM-README.md').write_bytes(body)
+            (folder/'CC0-1.0.txt').write_bytes(urllib.request.urlopen('https://raw.githubusercontent.com/spdx/license-list-data/v3.26.0/text/CC0-1.0.txt',timeout=30).read())
+            found=True
         if not found:raise RuntimeError('Missing upstream license text for '+package['name'])
     if 'MPL' in (package.get('license') or ''):
         shutil.copytree(root,folder/'source',dirs_exist_ok=True)
     rows.append({'name':package['name'],'version':package['version'],'license':package['license'],'repository':package.get('repository')})
-if args.target.endswith('windows-msvc'):
+if args.target.endswith('windows-msvc') and any(p['name']=='webview2-com-sys' for p in metadata['packages']):
     package=next(p for p in metadata['packages'] if p['name']=='webview2-com-sys')
     if package['version']!='0.39.1':raise RuntimeError('Recheck the WebView2 SDK version for this crate release')
     sdk='1.0.3800.47'

@@ -42,16 +42,21 @@ jobs:
           path: dist/prebuilt
           run-id: ${{ inputs.source_run }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build shared Rust browser assets
+        if: inputs.source_run == ''
+        run: |
+          cargo install wasm-bindgen-cli --version 0.2.129 --locked
+          python3 scripts/build-rust-ui-web.py
       - name: Build and package
         run: |
           if [ -n "$SOURCE_RUN" ]; then
-            export CASSETTE_PREBUILT_ARCHIVE="$PWD/dist/prebuilt/CassetteStudio-0.1.10-macOS-${{ matrix.arch }}.zip"
+            export CASSETTE_PREBUILT_ARCHIVE="$PWD/dist/prebuilt/CassetteStudio-0.2.0-macOS-${{ matrix.arch }}.zip"
           fi
-          sh scripts/package-public-macos.sh 0.1.10
+          sh scripts/package-public-macos.sh 0.2.0
       - name: Native app and audio smoke test
-        run: python3 scripts/test-macos-package.py dist/releases/v0.1.10/macos-${{ matrix.arch }}
+        run: python3 scripts/test-macos-package.py dist/releases/v0.2.0/macos-${{ matrix.arch }}
       - uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}
-          path: dist/releases/v0.1.10/CassetteStudio-0.1.10-macOS-${{ matrix.arch }}.zip
+          path: dist/releases/v0.2.0/CassetteStudio-0.2.0-macOS-${{ matrix.arch }}.zip
           if-no-files-found: error

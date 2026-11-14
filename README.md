@@ -6,9 +6,11 @@
 
 Arrange cassette mixtapes, prepare deck playback, export WAV audio and design J-CARDs. Windows, Linux and macOS use a standalone desktop window. The interface supports Japanese and English.
 
-**Version 0.1.10** — [Download](https://github.com/syouth2002/CassetteStudio/releases/latest) · [Release changes](docs/release-notes-0.1.10.md)
+**Version 0.2.0** — [Download](https://github.com/syouth2002/CassetteStudio/releases/latest) · [Release changes](docs/release-notes-0.2.0.md)
 
 ## Where to start
+
+Version 0.2.0 uses the common Rust egui/eframe UI for native windows and the browser. See [UI/build details](docs/rust-ui.md).
 
 | Goal | Guide |
 | --- | --- |
@@ -39,7 +41,7 @@ Arrange cassette mixtapes, prepare deck playback, export WAV audio and design J-
 2. Use **Add files** or drag/drop to import media.
 3. Select tracks and choose **Create from selection / order** or **Create cassette automatically**.
 4. Check side duration, gaps and audio settings in **Recording settings**, then audition the result.
-5. Generate and save WAV files, or use **Prepare deck recording** to play audio to a deck.
+5. Open **WAV export / deck recording** to save side WAVs or use the independent recording player.
 
 The [user guide](docs/usage.md) explains the controls, workflow and scope of each setting.
 

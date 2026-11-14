@@ -1,3 +1,4 @@
+import {engineUrl} from './engine-test-url.mjs';
 // End-to-end DC correction tests; all media and libraries are synthetic and isolated.
 import {spawn,spawnSync} from 'node:child_process';
 import {mkdir,readFile,writeFile,copyFile} from 'node:fs/promises';
@@ -30,8 +31,8 @@ await writeFile(path.join(data,'sources',legacy.id),legacyBytes);
 const legacyHash=createHash('sha256').update(legacyBytes).digest('hex');
 await writeFile(path.join(data,'library.json'),JSON.stringify({tracks:[legacy],collections:[]}));
 const before=createHash('sha256').update(await readFile(biased)).digest('hex');
-const base='http://127.0.0.1:3221';
-const server=spawn(path.join(root,'target','debug',process.platform==='win32'?'cassette-studio.exe':'cassette-studio'),[],{cwd:root,windowsHide:true,env:{...process.env,CASSETTE_DATA:data,CASSETTE_PORT:'3221'},stdio:'ignore'});
+let base;
+const server=spawn(path.join(root,'target','debug',process.platform==='win32'?'cassette-studio.exe':'cassette-studio'),[],{cwd:root,windowsHide:true,env:{...process.env,CASSETTE_DATA:data,CASSETTE_PORT:'0'},stdio:['ignore','pipe','pipe']});
 const off={side_seconds:8,gap:0,fade:1,normalize:false,remove_dc:false,target_lufs:-18,peak_db:-1};
 const on={...off,remove_dc:true};
 async function api(route,body){const r=await fetch(base+route,body===undefined?{}:{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const j=await r.json();assert.ok(r.ok,JSON.stringify(j));return j;}
@@ -42,7 +43,7 @@ function equalAudio(a,b,tolerance=2){assert.equal(a.length,b.length);let max=0;f
 const near=(a,b,e=2e-5)=>assert.ok(Math.abs(a-b)<e,`${a} != ${b}`);
 const entry=(id,offset=0,duration=8,fade_in=0,fade_out=0)=>({track_id:id,offset,duration,fade_in,fade_out,continuation:offset>0});
 try{
- for(let i=0;i<100;i++){try{await api('/api/library');break;}catch{if(server.exitCode!==null)throw Error('Server stopped');await new Promise(r=>setTimeout(r,100));if(i===99)throw Error('Startup timeout');}}
+ base=await engineUrl(server);
  const imported=await upload(biased),reference=await upload(clean);
  near(imported.dc.offset[0],.12);near(imported.dc.offset[1],-.07);
  const raw=await api(`/api/preview/${imported.id}`,off),corrected=await api(`/api/preview/${imported.id}`,on);

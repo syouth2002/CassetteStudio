@@ -17,16 +17,33 @@ if (-not (Test-Path -LiteralPath $exe)) {
     & cargo build --release --locked
     if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
 }
-$server = Start-Process -FilePath $exe -WorkingDirectory $projectRoot -WindowStyle Hidden -PassThru
+$logBase = Join-Path ([System.IO.Path]::GetTempPath()) ("cassette-studio-" + [guid]::NewGuid().ToString('N'))
+$outputLog = "$logBase.stdout.log"
+$errorLog = "$logBase.stderr.log"
+$server = Start-Process -FilePath $exe -WorkingDirectory $projectRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput $outputLog -RedirectStandardError $errorLog
 try {
     $ready = $false
+    $serverUrl = $null
     for ($attempt = 0; $attempt -lt 60; $attempt++) {
-        if ($server.HasExited) { throw 'The server exited. Port 3210 may already be in use.' }
-        try { Invoke-RestMethod "http://127.0.0.1:$port/api/library" | Out-Null; $ready = $true; break } catch { Start-Sleep -Milliseconds 500 }
+        if ($server.HasExited) {
+            $details = if (Test-Path -LiteralPath $errorLog) { Get-Content -LiteralPath $errorLog -Raw } else { '' }
+            throw "The server exited. Close another Cassette Studio instance using this library, or check the configured port. $details"
+        }
+        if (Test-Path -LiteralPath $outputLog) {
+            $text = Get-Content -LiteralPath $outputLog -Raw
+            if ($text -match 'http://127\.0\.0\.1:\d+') { $serverUrl = $Matches[0] }
+        }
+        if ($serverUrl) {
+            try { Invoke-RestMethod "$serverUrl/api/library" -TimeoutSec 2 | Out-Null; $ready = $true; break } catch { }
+        }
+        Start-Sleep -Milliseconds 500
     }
     if (-not $ready) { throw 'Startup timed out.' }
-    Start-Process "http://127.0.0.1:$port/"
-    Write-Host "Cassette Studio: http://127.0.0.1:$port/"
+    Start-Process "$serverUrl/"
+    Write-Host "Cassette Studio: $serverUrl/"
     Write-Host 'Press Enter to stop Cassette Studio.'
     Read-Host | Out-Null
-} finally { if (-not $server.HasExited) { Stop-Process -Id $server.Id } }
+} finally {
+    if (-not $server.HasExited) { Stop-Process -Id $server.Id }
+    foreach ($path in @($outputLog, $errorLog)) { if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -ErrorAction SilentlyContinue } }
+}

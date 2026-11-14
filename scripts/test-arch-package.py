@@ -23,9 +23,9 @@ with tempfile.TemporaryDirectory(prefix='cassette-arch-') as folder:
                     time.sleep(.2)
                 assert base,(root/'server.log').read_text()
                 status=json.load(urllib.request.urlopen(base+'/api/status'))
-                assert status['version']=='0.1.10' and status['ffmpeg'] and status['ffprobe'],status
-                assert b'options-dialog' in urllib.request.urlopen(base).read()
-                assert b'referenceToneWav' in urllib.request.urlopen(base+'/reference-tone.js').read()
+                assert status['version']=='0.2.0' and status['ffmpeg'] and status['ffprobe'],status
+                assert b'cassette-canvas' in urllib.request.urlopen(base).read()
+                assert urllib.request.urlopen(base+'/ui/cassette_ui_bg.wasm').read(4)==b'\x00asm'
                 boundary='cassette-arch-fixture'
                 body=(f'--{boundary}\r\nContent-Disposition: form-data; name="files"; filename="tone.wav"\r\nContent-Type: audio/wav\r\n\r\n'.encode()+media.read_bytes()+f'\r\n--{boundary}--\r\n'.encode())
                 request=urllib.request.Request(base+'/api/import',data=body,headers={'Content-Type':f'multipart/form-data; boundary={boundary}'})

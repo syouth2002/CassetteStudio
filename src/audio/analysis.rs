@@ -59,15 +59,26 @@ fn measure_loudness_with_dc(
         .map(|f| format!(",{f}"))
         .unwrap_or_default();
     let stereo = super::stereo::filter(t)?;
+    let timeline = if offset.is_none() && t.pseudo_stereo == 0 {
+        ",ebur128=peak=true"
+    } else {
+        ""
+    };
     let filter = format!(
-        "{STEREO}{dc}{stereo},atrim=start={}:end={},asetpts=PTS-STARTPTS,loudnorm=I=-18:TP=-1:LRA=50:print_format=json",
-        t.trim_start, t.trim_end
+        "{STEREO}{dc}{stereo},atrim=start={}:duration={},asetpts=PTS-STARTPTS{timeline},loudnorm=I=-18:TP=-1:LRA=50:print_format=json",
+        t.trim_start,
+        t.audible()
     );
     let o = run(command("ffmpeg")
         .args(["-hide_banner", "-nostats", "-nostdin", "-i"])
         .arg(path)
         .args(["-map", "0:a:0", "-vn", "-af", &filter, "-f", "null", "-"]))?;
-    parse_loudness(&String::from_utf8_lossy(&o.stderr))
+    let log = String::from_utf8_lossy(&o.stderr);
+    let loudness = parse_loudness(&log)?;
+    if !timeline.is_empty() {
+        super::graph::save_source_series(path, t, &log)?;
+    }
+    Ok(loudness)
 }
 pub fn measure_track(path: &Path, t: &mut Track) -> Result<(), String> {
     if t.mono.is_none() {

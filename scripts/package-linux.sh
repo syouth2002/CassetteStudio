@@ -42,7 +42,7 @@ Package: cassette-studio
 Version: 0.1.1
 Architecture: amd64
 Maintainer: Cassette Studio
-Depends: libwebkit2gtk-4.1-0, libgtk-3-0t64, libxdo3, libdbus-1-3, ffmpeg, xdg-desktop-portal-gtk
+Depends: libasound2t64, libasound2-plugins, libx11-6, libxcursor1, libxi6, libxrandr2, libxkbcommon-x11-0, libwayland-client0, libegl1, libgl1, libdbus-1-3, ffmpeg, xdg-desktop-portal-gtk
 Section: sound
 Priority: optional
 Description: Cassette playlist editor and recording preparation

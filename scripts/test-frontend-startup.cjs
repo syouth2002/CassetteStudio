@@ -23,7 +23,8 @@ const assert = require('node:assert/strict');
       await new Promise(resolve => setTimeout(resolve, 50));
     }
     assert.ok(base, logs);
-    const html = await (await fetch(base)).text();
+    // Compatibility frontend only; the Rust canvas has its own browser checks.
+    const html = await (await fetch(base+'/legacy/')).text();
     const scripts = [...html.matchAll(/<script\s+src="([^"]+)"/g)].map(match => match[1]);
     const elements = new Map();
     const handlers = new Map();

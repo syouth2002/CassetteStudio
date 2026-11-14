@@ -22,4 +22,8 @@ const STEREO: &str = "aresample=44100,aformat=sample_fmts=fltp:channel_layouts=s
 mod tests;
 
 mod graph;
-pub use graph::{Graph, graph, side_graph};
+mod graph_cache;
+pub use graph::{Graph, graph, prepare_track_graphs, side_graph};
+
+mod properties;
+pub use properties::properties;

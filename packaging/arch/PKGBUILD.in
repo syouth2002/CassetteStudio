@@ -1,12 +1,12 @@
 # Generated PKGBUILD downloads a checksummed source snapshot from this release.
 pkgname=cassette-studio
-pkgver=0.1.10
+pkgver=0.2.0
 pkgrel=1
 pkgdesc='Cassette mixtape editor and recording preparation'
 arch=('x86_64')
 url='https://github.com/syouth2002/CassetteStudio'
 license=('MIT')
-depends=('gtk3' 'webkit2gtk-4.1' 'xdotool' 'dbus' 'ffmpeg' 'xdg-desktop-portal')
+depends=('alsa-lib' 'alsa-plugins' 'libx11' 'libxcursor' 'libxi' 'libxrandr' 'libxkbcommon-x11' 'wayland' 'libglvnd' 'dbus' 'ffmpeg' 'xdg-desktop-portal')
 makedepends=('rust' 'pkgconf' 'python')
 optdepends=('yt-dlp: URL imports' 'nodejs: JavaScript runtime for URL imports'
             'xdg-desktop-portal-gtk: file dialogs on GTK desktops')
@@ -30,7 +30,7 @@ build() {
 check() {
     cd "$srcdir/$pkgname-$pkgver"
     export CARGO_HOME="$srcdir/cargo-home"
-    cargo test --frozen
+    cargo test --workspace --features desktop --frozen
 }
 
 package() {

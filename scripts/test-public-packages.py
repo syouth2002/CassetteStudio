@@ -6,7 +6,7 @@ def check(names,root,executable):
     for suffix in [executable,'README.md','README.ja.md','LICENSE','THIRD_PARTY_NOTICES.md','docs/dolby-b-c-research.ja.md','licenses/dependencies.json','licenses/rust-standard-library/COPYRIGHT-library.html','licenses/option-ext-0.2.0/source/src/lib.rs']:
         assert f'{root}/{suffix}' in paths,suffix
     for language in ['ja','en']:
-        for screen in ['library','cassette','settings','options','reference-tone','entry-fit','settings-audio','recording','scroll','jcard-outside','jcard-inside','lufs-track','lufs-side-a','lufs-side-b','linux-flatpak','linux-appimage','track-audio','automatic-cassettes']:
+        for screen in ['library','cassette','settings','options','reference-tone','entry-fit','settings-audio','recording','scroll','jcard-outside','jcard-inside','lufs-track','lufs-side-a','lufs-side-b','track-audio','automatic-cassettes']:
             assert f'{root}/docs/screenshots/{screen}-{language}.jpg' in paths
     for name in paths:
         parts=pathlib.PurePosixPath(name).parts
@@ -19,7 +19,8 @@ with zipfile.ZipFile(next(release.glob('*Windows-x64.zip'))) as archive:
     assert archive.testzip() is None
     paths=check(archive.namelist(),'windows-x64','CassetteStudio.exe')
     assert 'windows-x64/SetupAudioTools.cmd' in paths
-    assert 'windows-x64/licenses/microsoft-webview2-sdk-1.0.3800.47/LICENSE.txt' in paths
+    assert 'windows-x64/licenses/NotoSansJP/OFL.txt' in paths
+    assert 'windows-x64/licenses/NotoSerifJP/OFL.txt' in paths
 with tarfile.open(next(release.glob('*Linux-Ubuntu24-x64.tar.gz'))) as archive:
     check(archive.getnames(),'linux-x64','CassetteStudio')
     assert archive.getmember('linux-x64/CassetteStudio').mode&0o111

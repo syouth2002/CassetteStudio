@@ -1,6 +1,35 @@
 # Source responsibilities
 
+Version 0.2.0 uses the shared Rust UI. See [build instructions](development.md). Legacy HTML sections describe compatibility code.
+
 See [the Japanese guide](architecture.ja.md) for a complete file-by-file table.
+
+## Current Rust UI
+
+Native Windows/Linux/macOS windows and the browser share `ui/src/`. `app.rs` owns application state, collection mutations and frame updates. Its child modules separate responsibilities:
+
+| File | Responsibility |
+| --- | --- |
+| `app_layout.rs` | Toolbar, library sidebar and collection headings |
+| `app_tracks.rs` | Track rows, selection, context menus and graph requests |
+| `app_dialogs.rs` | Settings and editing dialogs |
+| `app_events.rs` | Async response dispatch, state updates and stale-response rejection |
+| `app_playback.rs` | Playback requests, navigation and transport controls |
+| `play_session.rs` | Queue, current position, gap timing and side offsets, independent of browsing |
+| `playback.rs` | rodio/HTMLAudio adapters and cancellable audition state |
+| `transport.rs` / `platform.rs` | HTTP and platform-specific file operations |
+| `arrangement.rs` | Editable capacity/fade/side continuation calculations |
+| `appearance.rs` / `settings.rs` | Shared widgets, status, formatting and Japanese/English text |
+| `graph.rs` / `properties.rs` | LUFS graph state and track properties |
+| `jcard*.rs` / `track_drag.rs` | J-CARD editing/view geometry and track reorder feedback |
+
+Audio calculations remain in the backend. `audio/render.rs` and `audio/graph.rs` share `processing_filter`. Track and whole-side analysis use cache identities appropriate to each output. Manual fitting shares `arrangement::fit`; automatic selection remains in server-side `planner.rs`.
+
+### Playback order
+
+A single selected track starts playback at its position in the full source list. Multiple selected tracks form a queue in list order. Double-click and context-menu playback retain the source list and position too. Previous/next move between tracks, clamped at the ends; previous no longer changes behavior after three seconds. Whole-side playback seeks to offsets including leading silence and gaps, with pending seeks applied after audio preparation. Queue order and settings are captured at playback start and are unaffected by browsing another list. Stop/errors clear the session; generation checks reject stale audio responses.
+
+The Web frontend details below describe the published v0.2.0 compatibility UI.
 
 ## Rust
 
@@ -35,3 +64,5 @@ Run the README's Rust, frontend and synthetic audio integration checks. `node sc
 Frontend regression tests load the relevant files directly instead of extracting one-line functions from source text.
 
 Whole-side LUFS analysis in `audio/graph.rs` reuses `render.rs` to measure a temporary WAV with leading/trailing silence and gaps. It does not concatenate per-track measurements: windows and gating remain continuous across the side. Cache keys include sources, order and settings; temporary audio is removed. `test-lufs-side-graph.mjs` checks WAV agreement and caching; `test-lufs-graph-ui.cjs` checks side switching and stale-response protection.
+
+`output.rs` owns a dedicated recording Player and countdown, stopped on drop. It shares rendered WAV caches with normal playback, but not playback state. `PlaybackPreparing` shows normal playback preparation and cancellation; generation checks reject late responses.

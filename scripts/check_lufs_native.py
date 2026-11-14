@@ -28,8 +28,13 @@ def check_lufs(base,track_id,collection_id):
         assert graph['markers'] and graph['markers'][0]['time']==.5
         assert graph['processed']['integrated_lufs'] is not None
         assert response==post('/api/collections/'+collection_id+'/loudness-graph',{'side':side})
-    assert b'lufs-layout' in urllib.request.urlopen(base).read()
-    assert b'loadSide' in urllib.request.urlopen(base+'/js/audio/loudness-graph.js').read()
+    ui=urllib.request.urlopen(base).read()
+    if b'cassette-canvas' in ui:
+        assert b'init' in urllib.request.urlopen(base+'/ui/cassette_ui.js').read()
+        assert urllib.request.urlopen(base+'/ui/cassette_ui_bg.wasm').read(4)==b'\x00asm'
+    else:
+        assert b'lufs-layout' in ui
+        assert b'loadSide' in urllib.request.urlopen(base+'/js/audio/loudness-graph.js').read()
     effect_request=urllib.request.Request(base+'/api/tracks/'+track_id+'/pseudo-stereo',data=json.dumps({'strength':0}).encode(),method='PUT',headers={'Content-Type':'application/json'})
     assert json.load(urllib.request.urlopen(effect_request,timeout=120))['pseudo_stereo']==0
     print('PASS: mono detection and pseudo stereo preview; packaged track/A/B LUFS analysis, true peak, track starts, cache and embedded graph UI')

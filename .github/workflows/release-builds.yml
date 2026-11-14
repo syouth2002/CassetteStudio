@@ -1,0 +1,91 @@
+name: Release native packages
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - name: Shared WebAssembly UI
+        run: |
+          cargo install wasm-bindgen-cli --version 0.2.129 --locked
+          python3 scripts/build-rust-ui-web.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rust-ui-web
+          path: ui/web/pkg/
+  macos:
+    needs: web
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/download-artifact@v4
+        with:
+          name: rust-ui-web
+          path: ui/web/pkg
+      - name: Audio tools
+        run: brew install ffmpeg
+      - name: Build, package and verify
+        run: |
+          sh scripts/package-public-macos.sh 0.2.0
+          python3 scripts/test-macos-package.py dist/releases/v0.2.0/macos-${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-${{ matrix.arch }}
+          path: dist/releases/v0.2.0/CassetteStudio-0.2.0-macOS-${{ matrix.arch }}.zip
+          if-no-files-found: error
+  arch:
+    needs: web
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    timeout-minutes: 60
+    steps:
+      - name: Build and test dependencies
+        run: |
+          pacman -Syu --noconfirm --needed git rust pkgconf python alsa-lib alsa-plugins libx11 libxcursor libxi libxrandr libxkbcommon-x11 wayland libglvnd mesa dbus ffmpeg xdg-desktop-portal-gtk xorg-server-xvfb xorg-xauth nodejs
+          useradd -m builder
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: rust-ui-web
+          path: ui/web/pkg
+      - name: Source snapshot and package
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          python scripts/prepare-arch-package.py
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          su builder -c "cd '$GITHUB_WORKSPACE/dist/arch' && makepkg --noconfirm"
+      - name: Install and verify
+        run: |
+          sed -i '/^[[:space:]]*NoExtract[[:space:]]*=/d' /etc/pacman.conf
+          pacman -U --noconfirm dist/arch/cassette-studio-0.2.0-1-x86_64.pkg.tar.zst
+          pacman -Qkk cassette-studio
+          su builder -c "cd '$GITHUB_WORKSPACE' && dbus-run-session -- xvfb-run -a python scripts/test-arch-package.py"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arch-x86_64
+          path: |
+            dist/arch/cassette-studio-0.2.0-1-x86_64.pkg.tar.zst
+            dist/arch/CassetteStudio-0.2.0-Arch-source.tar.gz
+            dist/arch/PKGBUILD
+          if-no-files-found: error

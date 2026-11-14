@@ -90,6 +90,15 @@ impl Default for Settings {
     }
 }
 impl Settings {
+    /// Library graphs compare the source with normalized output. This is a
+    /// preview only; cassette recording settings remain independent.
+    pub fn loudness_preview(&self) -> Self {
+        Self {
+            normalize: true,
+            ..self.clone()
+        }
+    }
+
     pub fn content_seconds(&self) -> f64 {
         self.side_seconds - self.lead_in
     }
@@ -222,6 +231,26 @@ pub fn side_duration(entries: &[Entry], gap: f64) -> f64 {
 
 #[cfg(test)]
 mod settings_tests {
+    #[test]
+    fn library_normalization_preview_preserves_recording_settings() {
+        let recording = super::Settings {
+            target_lufs: -20.,
+            peak_db: -2.,
+            remove_dc: true,
+            wav_sample_rate: Some(48000),
+            ..Default::default()
+        };
+        let preview = recording.loudness_preview();
+        assert!(preview.normalize);
+        assert!(!recording.normalize);
+        assert_eq!(
+            preview,
+            super::Settings {
+                normalize: true,
+                ..recording
+            }
+        );
+    }
     use super::*;
 
     #[test]

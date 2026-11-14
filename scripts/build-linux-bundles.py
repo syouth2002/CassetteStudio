@@ -82,6 +82,13 @@ def stage(prefix,binaries,cache):
         source=binaries/source_name
         if not source.is_file():raise RuntimeError('Build native Linux binaries first: '+str(source))
         shutil.copy2(source,prefix/'bin'/dest_name);(prefix/'bin'/dest_name).chmod(0o755)
+    alsa_plugins=pathlib.Path('/usr/lib/x86_64-linux-gnu/alsa-lib')
+    plugin_dest=prefix/'lib/alsa-lib';plugin_dest.mkdir(parents=True,exist_ok=True)
+    for name in ['libasound_module_pcm_pulse.so','libasound_module_ctl_pulse.so']:
+        source=alsa_plugins/name
+        shutil.copy2(source,plugin_dest/name)
+        copy_libraries([source],prefix/'lib',notices,provenance)
+    shutil.copy2(ROOT/'packaging/linux-bundles/asound.conf',prefix/'share/cassette-studio/asound.conf')
     config=subprocess.check_output(['ffmpeg','-buildconf'],text=True,stderr=subprocess.STDOUT)
     if '--enable-nonfree' in config:raise RuntimeError('Refusing to redistribute a nonfree FFmpeg build')
     (notices/'FFmpeg-build-configuration.txt').write_text(config)
@@ -139,14 +146,6 @@ def flatpak(args,build,cache):
     if stage_dir.exists() and not args.resume:raise RuntimeError('Use a fresh build directory or --resume: '+str(stage_dir))
     if not stage_dir.exists():run(['flatpak','build-init',stage_dir,APP_ID,'org.gnome.Platform','org.gnome.Platform','49'])
     prefix=stage_dir/'files';notices,provenance=stage(prefix,args.binaries,cache)
-    xdo=pathlib.Path(subprocess.check_output(['pkg-config','--variable=libdir','libxdo'],text=True).strip())/'libxdo.so.3' if shutil.which('pkg-config') and subprocess.run(['pkg-config','--exists','libxdo']).returncode==0 else pathlib.Path('/usr/lib/x86_64-linux-gnu/libxdo.so.3')
-    shutil.copy2(xdo,prefix/'lib/libxdo.so.3')
-    xdo_package=owner(xdo)
-    if xdo_package:
-        folder=notices/xdo_package.replace(':','_');folder.mkdir(exist_ok=True)
-        shutil.copy2('/usr/share/doc/libxdo3/copyright',folder/'copyright')
-        fields=' '.join(chr(36)+'{'+field+'}' for field in ['binary:Package','Version','source:Package','source:Version'])
-        provenance[xdo_package]=subprocess.check_output(['dpkg-query','-W','-f',fields,xdo_package],text=True)
     shutil.copy2(ROOT/'packaging/linux-bundles/launch-flatpak.sh',prefix/'bin/cassette-studio');(prefix/'bin/cassette-studio').chmod(0o755)
     permissions=['--share=network','--share=ipc','--socket=wayland','--socket=fallback-x11','--socket=pulseaudio','--device=dri','--filesystem=host:ro','--env=GTK_USE_PORTAL=1']
     if not (stage_dir/'export').exists():run(['flatpak','build-finish',stage_dir,'--command=cassette-studio',*permissions])
@@ -162,24 +161,12 @@ def appimage(args,build,cache):
     if appdir.exists() and not args.resume:raise RuntimeError('Use a fresh build directory or --resume: '+str(appdir))
     print('Staging AppImage payload',flush=True)
     prefix=appdir/'usr';notices,provenance=stage(prefix,args.binaries,cache)
-    # WebKit launches helpers and GStreamer loads plugins dynamically, outside ldd's graph.
-    helpers=pathlib.Path('/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1')
-    shutil.copytree(helpers,prefix/'lib/webkit2gtk-4.1',ignore=shutil.ignore_patterns('MiniBrowser'),dirs_exist_ok=True)
-    gst=prefix/'lib/gstreamer-1.0';gst.mkdir(exist_ok=True)
-    for name in ['coreelements','playback','typefindfunctions','wavparse','audioconvert','audioresample','volume','pulseaudio','autodetect','app','gio','soup']:
-        source=pathlib.Path('/usr/lib/x86_64-linux-gnu/gstreamer-1.0')/f'libgst{name}.so'
-        shutil.copy2(source,gst/source.name)
-    scanner=pathlib.Path('/usr/lib/x86_64-linux-gnu/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner')
-    (prefix/'libexec/gstreamer-1.0').mkdir(parents=True,exist_ok=True);shutil.copy2(scanner,prefix/'libexec/gstreamer-1.0/gst-plugin-scanner')
-    binaries=list((prefix/'lib/webkit2gtk-4.1').rglob('*'))+list(gst.glob('*.so'))+[prefix/'libexec/gstreamer-1.0/gst-plugin-scanner']
-    copy_libraries([p for p in binaries if p.is_file()and p.read_bytes()[:4]==b'\x7fELF'],prefix/'lib',notices,provenance)
     desktop=prefix/f'share/applications/{APP_ID}.desktop';desktop.write_text(desktop.read_text().replace('(Flatpak)','(AppImage)').replace('Exec=cassette-studio','Exec=cassette-studio-desktop'))
     deploy=download('linuxdeploy',cache);deploy.chmod(0o755)
     deploydir=build/'linuxdeploy';deploydir.mkdir(exist_ok=True);run([deploy,'--appimage-extract'],cwd=deploydir,stdout=subprocess.DEVNULL)
     deploybin=deploydir/'squashfs-root/AppRun'
-    plugin=deploybin.parent/'linuxdeploy-plugin-gtk.sh';shutil.copy2(download('gtk_plugin',cache),plugin);plugin.chmod(0o755)
-    env={**os.environ,'PATH':str(deploybin.parent)+':/usr/local/bin:/usr/bin:/bin','DEPLOY_GTK_VERSION':'3','APPIMAGE_EXTRACT_AND_RUN':'1','ARCH':'x86_64','VERSION':args.version,'OUTPUT':str(args.output/f'CassetteStudio-{args.version}-x86_64.AppImage')}
-    deploy_logged([deploybin,'--appdir',appdir,'--executable',prefix/'bin/cassette-studio-desktop','--executable',prefix/'bin/cassette-studio-browser','--desktop-file',desktop,'--icon-file',prefix/f'share/icons/hicolor/512x512/apps/{APP_ID}.png','--plugin','gtk'],build,env=env)
+    env={**os.environ,'PATH':str(deploybin.parent)+':/usr/local/bin:/usr/bin:/bin','APPIMAGE_EXTRACT_AND_RUN':'1','ARCH':'x86_64','VERSION':args.version,'OUTPUT':str(args.output/f'CassetteStudio-{args.version}-x86_64.AppImage')}
+    deploy_logged([deploybin,'--appdir',appdir,'--executable',prefix/'bin/cassette-studio-desktop','--executable',prefix/'bin/cassette-studio-browser','--desktop-file',desktop,'--icon-file',prefix/f'share/icons/hicolor/512x512/apps/{APP_ID}.png'],build,env=env)
     (notices/'system-packages.json').write_text(json.dumps(provenance,indent=2)+'\n')
     finish_appimage(args,build,appdir)
 

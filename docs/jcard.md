@@ -91,3 +91,11 @@ PDF embeds a 300 dpi image to preserve Japanese appearance and omits selection o
 Sans-serif, serif and monospace families use locally available fonts. Limits: 5 MB per PNG/JPEG, 150 elements per face and 12 MB per save request.
 
 Freehand paths, image cropping, mixed formatting inside one text box and DOCX are unsupported. Approximate overflow warnings are not shown. Checks are listed in the [development guide](development.md).
+
+## View rotation, navigation and context actions
+
+Left 90° / Right 90° rotate the editing view without changing artwork or print orientation. Wheel zooms around the cursor; middle-drag or Space+left-drag pans; double-middle-click fits the card. Pan limits keep part of the card visible.
+
+![Quarter-turn editing view](screenshots/jcard-rotation-en.jpg)
+
+Right-click for cut/copy/paste, duplication, deletion, stacking, centering, rotation reset and position/size locks. Centering uses the fold region containing the object center. A selected rear object remains draggable through overlapping foreground artwork. SVG/PDF preserve stacking order.

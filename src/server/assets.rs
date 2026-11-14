@@ -210,10 +210,13 @@ pub(super) fn routes() -> Router<App> {
                 )
             }),
         )
+        .route("/", get(rust_index))
         .route(
-            "/",
+            "/legacy/",
             get(|| async { Html(include_str!("../../web/index.html")) }),
         )
+        .route("/ui/cassette_ui.js", get(rust_js))
+        .route("/ui/cassette_ui_bg.wasm", get(rust_wasm))
         .route(
             "/reference-tone.js",
             get(|| async {
@@ -259,4 +262,31 @@ pub(super) fn routes() -> Router<App> {
                 )
             }),
         )
+}
+
+async fn rust_index() -> Html<&'static str> {
+    #[cfg(cassette_rust_web)]
+    {
+        Html(include_str!("../../ui/web/index.html"))
+    }
+    #[cfg(not(cassette_rust_web))]
+    {
+        Html(
+            "<!doctype html><meta charset=utf-8><title>Cassette Studio</title><h1>Cassette Studio</h1><p>Build the Rust browser UI: <code>python scripts/build-rust-ui-web.py</code>, then rebuild the server.</p><p>Rust UIをビルドしてからサーバーを再ビルドしてください。</p><a href='/legacy/'>Previous UI / 旧UI</a>",
+        )
+    }
+}
+async fn rust_js() -> impl axum::response::IntoResponse {
+    #[cfg(cassette_rust_web)]
+    let bytes: &[u8] = include_bytes!("../../ui/web/pkg/cassette_ui.js");
+    #[cfg(not(cassette_rust_web))]
+    let bytes: &[u8] = b"throw new Error('Build the Rust UI first');";
+    ([("content-type", "text/javascript; charset=utf-8")], bytes)
+}
+async fn rust_wasm() -> impl axum::response::IntoResponse {
+    #[cfg(cassette_rust_web)]
+    let bytes: &[u8] = include_bytes!("../../ui/web/pkg/cassette_ui_bg.wasm");
+    #[cfg(not(cassette_rust_web))]
+    let bytes: &[u8] = b"";
+    ([("content-type", "application/wasm")], bytes)
 }

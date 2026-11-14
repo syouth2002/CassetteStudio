@@ -2,7 +2,7 @@
 # Build a native-architecture app; external audio tools remain separate.
 set -eu
 project=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-version=${1:-0.1.10}
+version=${1:-0.2.0}
 case $(uname -m) in arm64) arch=arm64; target=aarch64-apple-darwin;; x86_64) arch=x64; target=x86_64-apple-darwin;; *) exit 1;; esac
 release="$project/dist/releases/v$version"
 stage="$release/macos-$arch"
@@ -15,7 +15,7 @@ else
 test ! -e "$stage" || { echo "Stage already exists: $stage" >&2; exit 1; }
 cd "$project"
 cargo build --release --features desktop --bins --locked
-cargo test --locked
+cargo test --workspace --features desktop --locked
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$stage/docs"
 cp target/release/cassette-studio-desktop "$app/Contents/MacOS/CassetteStudio"
 cp target/release/cassette-studio "$stage/cassette-studio-browser"

@@ -4,15 +4,15 @@
 
 ## Public release contents / 公開リリースの内容
 
-Public application-only packages include exact Rust crate notices under `licenses/`, Rust standard-library notices, the source of the MPL-2.0 dependency option-ext, and the Microsoft WebView2 SDK loader notices on Windows. The WebView2 loader is matched against SDK 1.0.3800.47. FFmpeg, FFprobe, yt-dlp, Node.js, GTK and WebKitGTK are **not bundled** in these public packages. Install external tools separately. Their licenses are provided by their distributors. The Windows setup helper downloads tools directly from their upstream distributors when the user runs it.
+Application-only packages include exact Rust crate and standard-library notices, applicable MPL source, and embedded Japanese font licenses under `licenses/`. The Rust UI uses egui/eframe, rodio, resvg and svg2pdf; it does not use WebView2 or WebKitGTK. External audio/URL tools remain separate in Windows, traditional Linux, Ubuntu, Arch and macOS packages. Flatpak/AppImage bundle pinned audio/URL tools and include their notices and corresponding-source records.
 
-公開用パッケージのlicenses/には、組み込みRustライブラリ・Rust標準ライブラリの表示、MPL-2.0のoption-extのソース、WindowsではMicrosoft WebView2ローダーのライセンス表示を含めます。ローダーはSDK 1.0.3800.47と照合しています。FFmpeg・FFprobe・yt-dlp・Node.js・GTK・WebKitGTKは公開パッケージに同梱しません。外部ツールは別途導入し、配布元のライセンスに従います。Windows付属セットアップは、利用者が実行すると配布元から直接ツールを取得します。
+アプリ単体の配布物には、組み込みRustライブラリ・標準ライブラリ、MPL依存ソース、日本語フォントのライセンスを含めます。Rust UIはegui／eframe・rodio・resvg・svg2pdfを使用し、WebView2／WebKitGTKは使用しません。Flatpak／AppImage以外では音声・URLツールを別途導入します。Flatpak／AppImageには固定版ツールのライセンスと対応ソース情報を同梱・添付します。
 
 ## English
 
 Cassette Studio's own source code and documentation are licensed under [MIT](LICENSE). Dependencies and external tools retain their own licenses; the MIT license does not relicense them. This source repository does not contain external executable files, downloaded tool archives, music, or user libraries.
 
-Rust dependencies and exact versions are recorded in [Cargo.toml](https://github.com/syouth2002/CassetteStudio/blob/v0.1.1/Cargo.toml) and [Cargo.lock](https://github.com/syouth2002/CassetteStudio/blob/v0.1.1/Cargo.lock). Cargo retrieves their source and license files when building. Main dependencies include Axum, Tokio, Serde, serde_json, UUID, tower-http, url, fs2, directories, encoding_rs, Wry, Tao, and rfd. Refer to each crate's own license, including its transitive dependencies, when redistributing a compiled application.
+Rust dependencies and exact versions are recorded in [Cargo.toml](https://github.com/syouth2002/CassetteStudio/blob/v0.2.0/Cargo.toml) and [Cargo.lock](https://github.com/syouth2002/CassetteStudio/blob/v0.2.0/Cargo.lock). Cargo retrieves their source and license files when building. Main dependencies include Axum, Tokio, Serde, serde_json, UUID, tower-http, url, fs2, directories, encoding_rs, egui/eframe, rodio, resvg, svg2pdf, lopdf and rfd. Refer to each crate's own license, including its transitive dependencies, when redistributing a compiled application.
 
 External programs are invoked as separate processes:
 
@@ -29,7 +29,7 @@ The packaging scripts are local build helpers. They do not constitute a complete
 
 Cassette Studio自身のソースコードとドキュメントは[MITライセンス](LICENSE)です。依存ライブラリや外部ツールには各自のライセンスが適用され、MITに変更されるわけではありません。このソースリポジトリには外部実行ファイル、ダウンロード済みツール、音源、ユーザーのライブラリを含めません。
 
-Rust依存関係とバージョンは[Cargo.toml](https://github.com/syouth2002/CassetteStudio/blob/v0.1.1/Cargo.toml)と[Cargo.lock](https://github.com/syouth2002/CassetteStudio/blob/v0.1.1/Cargo.lock)に記録しています。ビルド時にCargoがソースやライセンスを取得します。主な依存関係はAxum、Tokio、Serde、serde_json、UUID、tower-http、url、fs2、directories、encoding_rs、Wry、Tao、rfdです。実行ファイルを再配布する際は、間接依存も含めて各ライセンスを確認してください。
+Rust依存関係とバージョンは[Cargo.toml](https://github.com/syouth2002/CassetteStudio/blob/v0.2.0/Cargo.toml)と[Cargo.lock](https://github.com/syouth2002/CassetteStudio/blob/v0.2.0/Cargo.lock)に記録しています。ビルド時にCargoがソースやライセンスを取得します。主な依存関係はAxum、Tokio、Serde、serde_json、UUID、tower-http、url、fs2、directories、encoding_rs、Wry、Tao、rfdです。実行ファイルを再配布する際は、間接依存も含めて各ライセンスを確認してください。
 
 - FFmpeg / FFprobe：[公式のライセンス情報](https://ffmpeg.org/legal.html)と[Windowsビルド配布元](https://www.gyan.dev/ffmpeg/builds/)を参照してください。ビルド構成により条件が異なり、Windowsセットアップで使うGyanビルドにはGPLの構成要素があります。実際に配布するバージョンと依存ライブラリの表示・ソース提供などの条件を満たす必要があります。
 - yt-dlp：[ライセンス案内](https://github.com/yt-dlp/yt-dlp#license)と[ライセンス本文](https://github.com/yt-dlp/yt-dlp/blob/master/LICENSE)を参照してください。配布実行ファイルには追加の構成要素が含まれるため、ソースと実行ファイルの条件が異なる場合があります。

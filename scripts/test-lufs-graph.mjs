@@ -92,7 +92,17 @@ try {
     await new Promise((r) => setTimeout(r, 50));
   }
   assert.ok(base, logs);
+  const analysis = await fetch(`${base}/api/loudness`, {
+    method: "POST", headers: {"content-type":"application/json"},
+    body: JSON.stringify({tracks:[id], settings})
+  });
+  assert.equal(analysis.status, 200, await analysis.text());
+  const seriesDir = path.join(data, "loudness-series");
+  const prepared = await readdir(seriesDir);
+  const preparedTimes = await Promise.all(prepared.map(async name => [name, (await stat(path.join(seriesDir, name))).mtimeMs]));
   const first = await graph(id);
+  assert.deepEqual(await readdir(seriesDir), prepared, "Opening an analyzed track must reuse the prepared original and processed curves");
+  for (const [name, modified] of preparedTimes) assert.equal((await stat(path.join(seriesDir,name))).mtimeMs, modified);
   assert.equal(first.status, 200, JSON.stringify(first));
   const g = first.value;
   assert.equal(g.duration, 12);
@@ -117,6 +127,11 @@ try {
     mtime = (await stat(path.join(cache, files[0]))).mtimeMs;
   assert.deepEqual((await graph(id)).value, g);
   assert.equal((await stat(path.join(cache, files[0]))).mtimeMs, mtime);
+  const mono=await fetch(`${base}/api/mono`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({tracks:[id]})});
+  assert.equal(mono.status,200);
+  assert.deepEqual((await graph(id)).value,g);
+  assert.deepEqual(await readdir(cache),files,"Mono metadata must not trigger a new LUFS cache entry");
+  assert.equal((await stat(path.join(cache,files[0]))).mtimeMs,mtime);
   const entry = {
     track_id: id,
     offset: 6,
@@ -200,8 +215,34 @@ try {
     await readFile(path.join(data, "sources", id)),
     sourceBefore,
   );
+  const form = new FormData();
+  const librarySettings = {normalize:false,remove_dc:false};
+  form.append("settings",JSON.stringify(librarySettings));
+  form.append("files",new Blob([sourceBefore,Buffer.from("graph-cache-import-fixture")]),"imported.wav");
+  const imported = await (await fetch(`${base}/api/import`,{method:"POST",body:form})).json();
+  assert.deepEqual(imported.errors,[]);
+  assert.equal(imported.tracks.length,1);
+  const importedId = imported.tracks[0].id;
+  const beforeOpen = await readdir(seriesDir);
+  const beforeOpenTimes = await Promise.all(beforeOpen.map(async name => [name,(await stat(path.join(seriesDir,name))).mtimeMs]));
+  const importedGraph = await graph(importedId,{settings:librarySettings});
+  assert.equal(importedGraph.status,200);
+  assert.ok(importedGraph.value.original.points.length>20);
+  assert.deepEqual(await readdir(seriesDir),beforeOpen,"Imported tracks must already have both graph series");
+  for(const[name,modified]of beforeOpenTimes) assert.equal((await stat(path.join(seriesDir,name))).mtimeMs,modified);
+  const normalizedLibraryGraph = await graph(importedId,{settings:{...librarySettings,normalize:true}});
+  assert.equal(normalizedLibraryGraph.status,200);
+  assert.deepEqual(normalizedLibraryGraph.value.original,importedGraph.value.original,"The library preview shares the same original analysis");
+  assert.ok(Math.abs(normalizedLibraryGraph.value.processed.integrated_lufs+18)<1,"Library preview uses normalized output");
+  assert.ok(normalizedLibraryGraph.value.processed.integrated_lufs-normalizedLibraryGraph.value.original.integrated_lufs>3,"A quiet source must have visibly distinct normalized output");
+  assert.deepEqual(await readdir(seriesDir),beforeOpen,"Normalized library preview is also prepared during import");
+  for(const[name,modified]of beforeOpenTimes) assert.equal((await stat(path.join(seriesDir,name))).mtimeMs,modified);
+  const gainResponse = await fetch(`${base}/api/tracks/${importedId}/gain`,{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({gain_db:3})});
+  assert.equal(gainResponse.status,200);
+  const gainGraph = await graph(importedId,{settings:librarySettings});
+  assert.ok(Math.abs(gainGraph.value.processed.integrated_lufs-gainGraph.value.original.integrated_lufs-3)<0.2,"Library graphs must show shared manual gain");
   console.log(
-    "PASS: LUFS windows, 12 dB dynamics, normalization, fades/range, true peak, cache reuse/invalidation, silence, short audio, validation, source unchanged",
+    "PASS: imported/analyzed graphs precomputed, manual gain reflected; LUFS windows, 12 dB dynamics, normalization, fades/range, true peak, cache reuse/invalidation, silence, short audio, validation, source unchanged",
   );
   console.log(dir);
 } finally {

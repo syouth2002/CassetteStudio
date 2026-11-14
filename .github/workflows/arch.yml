@@ -11,9 +11,16 @@ jobs:
     steps:
       - name: Install build and test dependencies
         run: |
-          pacman -Syu --noconfirm --needed git rust pkgconf python gtk3 webkit2gtk-4.1 xdotool dbus ffmpeg xdg-desktop-portal-gtk xorg-server-xvfb xorg-xauth nodejs
+          pacman -Syu --noconfirm --needed git rust pkgconf python alsa-lib alsa-plugins libx11 libxcursor libxi libxrandr libxkbcommon-x11 wayland libglvnd mesa dbus ffmpeg xdg-desktop-portal-gtk xorg-server-xvfb xorg-xauth nodejs
           useradd -m builder
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Shared Rust browser assets
+        run: |
+          cargo install wasm-bindgen-cli --version 0.2.129 --locked
+          python scripts/build-rust-ui-web.py
       - name: Prepare checksummed source snapshot
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -28,7 +35,7 @@ jobs:
           # The minimal Docker image excludes /usr/share/doc by default.
           # Verify our shipped documentation as well as the executable files.
           sed -i '/^[[:space:]]*NoExtract[[:space:]]*=/d' /etc/pacman.conf
-          pacman -U --noconfirm dist/arch/cassette-studio-0.1.10-1-x86_64.pkg.tar.zst
+          pacman -U --noconfirm dist/arch/cassette-studio-0.2.0-1-x86_64.pkg.tar.zst
           pacman -Qkk cassette-studio
           test -f /usr/share/doc/cassette-studio/docs/screenshots/options-ja.jpg
           test -f /usr/share/doc/cassette-studio/licenses/rust-standard-library/COPYRIGHT-library.html
@@ -40,7 +47,7 @@ jobs:
         with:
           name: arch-x86_64
           path: |
-            dist/arch/cassette-studio-0.1.10-1-x86_64.pkg.tar.zst
-            dist/arch/CassetteStudio-0.1.10-Arch-source.tar.gz
+            dist/arch/cassette-studio-0.2.0-1-x86_64.pkg.tar.zst
+            dist/arch/CassetteStudio-0.2.0-Arch-source.tar.gz
             dist/arch/PKGBUILD
           if-no-files-found: error

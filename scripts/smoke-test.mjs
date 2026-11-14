@@ -1,3 +1,4 @@
+import {engineUrl} from './engine-test-url.mjs';
 // End-to-end test using synthetic media only. Keeps test data under work/.
 import {spawn,spawnSync} from 'node:child_process';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
@@ -12,7 +13,7 @@ function ff(args){const r=spawnSync(ffmpeg,['-v','error','-nostdin','-y',...args
 const wav=path.join(work,'Tone with edge silence.wav'),video=path.join(work,'Video with audio.mkv');
 ff(['-f','lavfi','-i','sine=frequency=440:duration=4','-af','adelay=1000,apad=pad_dur=2','-ar','44100','-ac','2',wav]);
 ff(['-f','lavfi','-i','color=c=0x315e51:s=160x90:r=5:d=10','-f','lavfi','-i','sine=frequency=880:duration=8','-filter:a','adelay=500,apad=pad_dur=1.5','-c:v','ffv1','-c:a','pcm_s16le','-ar','44100','-ac','2',video]);
-const port=process.env.SMOKE_PORT||'3211';const base=`http://127.0.0.1:${port}`;
+const port=process.env.SMOKE_PORT||'0';let base;
 const server=spawn(path.join(root,'target','debug',`cassette-studio${suffix}`),[],{cwd:root,env:{...process.env,CASSETTE_PORT:port,CASSETTE_DATA:path.join(work,'data')},windowsHide:true,stdio:['ignore','pipe','pipe']});
 let logs='';server.stdout.on('data',d=>logs+=d);server.stderr.on('data',d=>logs+=d);
 async function api(route,body,method='POST'){const r=await fetch(base+route,body===undefined?{}:{method,headers:{'content-type':'application/json'},body:JSON.stringify(body)});const data=await r.json();assert.ok(r.ok,JSON.stringify(data));return data;}
@@ -20,7 +21,7 @@ const s={side_seconds:10,gap:1,fill_threshold:2,fade:1,continuation:'resume',rew
 const close=(a,b,epsilon=.04)=>assert.ok(Math.abs(a-b)<epsilon,`${a} != ${b}`);
 function rms(buffer,start,length){let sum=0,n=0;for(let i=Math.round(start*44100)*4;i<Math.min(buffer.length-44,Math.round((start+length)*44100)*4);i+=4){const v=buffer.readInt16LE(44+i);sum+=v*v;n++;}return Math.sqrt(sum/n);}
 try{
- for(let i=0;i<80;i++){try{await api('/api/library');break;}catch{if(server.exitCode!==null)throw Error(logs);await new Promise(r=>setTimeout(r,150));if(i===79)throw Error('Server start timeout');}}
+ base=await engineUrl(server);
  const status=await api('/api/status');assert.ok(status.ffmpeg&&status.ffprobe,'FFmpeg is required');
  const form=new FormData();form.append('settings',JSON.stringify(s));form.append('files',new Blob([await readFile(wav)]),'Tone with edge silence.wav');form.append('files',new Blob([await readFile(video)]),'Video with audio.mkv');
  const imported=await (await fetch(base+'/api/import',{method:'POST',body:form})).json();assert.equal(imported.errors?.length,0,JSON.stringify(imported));assert.equal(imported.tracks.length,2);

@@ -1,3 +1,4 @@
+import {engineUrl} from './engine-test-url.mjs';
 import {spawn} from 'node:child_process';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import path from 'node:path';
@@ -12,11 +13,11 @@ const blank=(name,seconds)=>({id:randomUUID(),name,kind:'cassette',tracks:[],sid
 const used=blank('収録済み',50);used.sides[0]=[{track_id:tracks[0].id,offset:0,duration:30,fade_in:0,fade_out:0,continuation:false}];
 const short=blank('短いカセット',50),long=blank('長いカセット',100),spare=blank('予備カセット',180),spare2=blank('予備カセット2',240);
 await writeFile(path.join(dir,'library.json'),JSON.stringify({tracks,collections:[used,short,long,spare,spare2]}));
-const server=spawn(path.join(root,'target','debug',`cassette-studio${process.platform==='win32'?'.exe':''}`),[],{cwd:root,windowsHide:true,env:{...process.env,CASSETTE_PORT:'3212',CASSETTE_DATA:dir},stdio:'ignore'});
-const base='http://127.0.0.1:3212';
+const server=spawn(path.join(root,'target','debug',`cassette-studio${process.platform==='win32'?'.exe':''}`),[],{cwd:root,windowsHide:true,env:{...process.env,CASSETTE_PORT:'0',CASSETTE_DATA:dir},stdio:['ignore','pipe','pipe']});
+let base;
 const post=(body)=>fetch(base+'/api/fill-cassettes',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
 try{
- for(let i=0;i<80;i++){try{await fetch(base+'/api/library');break;}catch{await new Promise(r=>setTimeout(r,100));if(i===79)throw Error('Startup timeout');}}
+ base=await engineUrl(server);
  const initial=await(await fetch(base+'/api/library')).json();
  const plan=optimize=>fetch(base+'/api/plan',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({tracks:tracks.map(t=>t.id),settings,optimize})});
  const automatic=await plan(true);assert.equal(automatic.status,200);
