@@ -47,6 +47,13 @@ for package in sorted(metadata['packages'],key=lambda p:(p['name'],p['version'])
             (folder/'UPSTREAM-README.md').write_bytes(body)
             (folder/'CC0-1.0.txt').write_bytes(urllib.request.urlopen('https://raw.githubusercontent.com/spdx/license-list-data/v3.26.0/text/CC0-1.0.txt',timeout=30).read())
             found=True
+        if not found and package['name']=='dispatch' and package.get('license')=='MIT':
+            # dispatch 0.2.0 declares MIT in its manifest but publishes no separate text.
+            # Retain the complete upstream source/attribution and the unmodified SPDX text.
+            shutil.copytree(root,folder/'source',dirs_exist_ok=True)
+            (folder/'MIT-standard-text.txt').write_bytes(urllib.request.urlopen('https://raw.githubusercontent.com/spdx/license-list-data/v3.26.0/text/MIT.txt',timeout=30).read())
+            (folder/'LICENSE-provenance.txt').write_text('Upstream MIT declaration and authors: source/Cargo.toml\nExact upstream commit: '+commit+'\nStandard license text: SPDX license-list-data v3.26.0 MIT.\n')
+            found=True
         if not found:raise RuntimeError('Missing upstream license text for '+package['name'])
     if 'MPL' in (package.get('license') or ''):
         shutil.copytree(root,folder/'source',dirs_exist_ok=True)
