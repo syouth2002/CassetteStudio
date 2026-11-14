@@ -4,7 +4,7 @@ project=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 version=${1:-0.2.0}
 release="$project/dist/releases/v$version"
 stage="$release/linux-x64"
-test ! -e "$stage" || { echo "Stage already exists: $stage" >&2; exit 1; }
+test ! -e "$stage/CassetteStudio" || { echo "Stage already exists: $stage" >&2; exit 1; }
 mkdir -p "$stage/docs" "$stage/assets"
 cp "$project/assets/cassette-studio-app.png" "$stage/assets/"
 cp "$project/dist/linux-x64/CassetteStudio" "$project/dist/linux-x64/cassette-studio-browser" "$stage/"

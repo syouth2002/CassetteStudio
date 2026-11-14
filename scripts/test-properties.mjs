@@ -23,7 +23,7 @@ for(const[format,codec,rate,bits,,mode]of cases){
 }
 await writeFile(path.join(data,'library.json'),JSON.stringify({tracks,collections:[]}));
 const hash=b=>createHash('sha256').update(b).digest('hex');
-const server=spawn(path.join(root,'target','debug',`cassette-studio${ext}`),[],{cwd:root,windowsHide:true,env:{...process.env,CASSETTE_DATA:data,CASSETTE_PORT:'0'}});
+const server=spawn(process.env.CASSETTE_TEST_ENGINE || path.join(root,'target','debug',`cassette-studio${ext}`),[],{cwd:root,windowsHide:true,env:{...process.env,CASSETTE_DATA:data,CASSETTE_PORT:'0'}});
 try{
  const base=await engineUrl(server),before=await(await fetch(base+'/api/library')).json();
  for(let i=0;i<cases.length;i++){

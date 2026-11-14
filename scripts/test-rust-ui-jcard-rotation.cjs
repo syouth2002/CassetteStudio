@@ -7,7 +7,7 @@ assert.equal(tape.id,'00000000-0000-4000-8000-000000000019','Disposable fixture 
 const rect=(id,color,x,y,w,h)=>({id,kind:'rect',x,y,w,h,rotation:0,color});
 const doc={version:2,paper:'a4',margin:5,front:65,spine:12,flap:25,height:100,extensions:[],background:'#ffffff',backBackground:'#ffffff',elements:[rect('red','#ff0000',20,20,40,30),rect('blue','#0000ff',30,25,40,30),rect('green','#00ff00',70,65,20,20)],backElements:[]};
 assert.equal((await p.request.put(url,{data:doc})).status(),200);let writes=0;p.on('request',r=>{if(r.url()===url&&r.method()==='PUT')writes++});
-await p.goto(base);await p.waitForFunction(()=>!document.getElementById('loading'));await p.waitForTimeout(1000);await p.mouse.click(90,330);await p.waitForTimeout(250);await p.mouse.click(744,266);await p.waitForFunction(()=>document.getElementById('cassette-canvas').hasAttribute('data-editor-viewport'));await p.waitForTimeout(1000);
+await p.goto(base);await p.waitForFunction(()=>!document.getElementById('loading'));await p.waitForTimeout(1000);await p.mouse.click(90,330);await p.waitForTimeout(250);await p.mouse.click(890,266);await p.waitForFunction(()=>document.getElementById('cassette-canvas').hasAttribute('data-editor-viewport'));await p.waitForTimeout(1000);
 const current=async()=>await(await p.request.get(url)).json(),initial=await current(),baseline=writes;
 const shot=name=>p.screenshot({path:path.join(out,name+'.png')});const clip={x:200,y:75,width:830,height:710};
 const waitDoc=async predicate=>{for(let n=0;n<100;n++){const d=await current();if(predicate(d))return d;await p.waitForTimeout(100)}await shot('failure');console.log(JSON.stringify(await current()));throw Error('Artwork state did not match')};
